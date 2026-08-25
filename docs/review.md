@@ -111,6 +111,11 @@ The first Code Ocean App Panel will expose the standard count-table path only:
 MOO and Seurat choices will be added only with their corresponding optional
 bridges, rather than mixing object-specific controls into the initial panel.
 
+The initial adapter is now defined by `.codeocean/app-panel.json` and
+`code/main.R`. It supports direct counts/metadata uploads without an
+environment-specific data-asset ID. The Code Ocean environment must provide
+R with `edgeR`, `limma`, and `optparse` before this adapter can be run there.
+
 ## Paired-analysis test data
 
 The CCBR bulk training dataset cannot use `Batch` as a donor/patient proxy:
