@@ -3,14 +3,14 @@
   "named_parameters": true,
   "general": {
     "title": "OMIX DEG Analysis",
-    "instructions": "Run differential expression from raw integer-like counts and sample metadata. Upload one counts table and one metadata table (CSV, TSV, or RDS), or attach an asset containing clearly named counts and metadata files.\n\nThe default column names match the included training example: GeneName, Sample, Group, and Batch. Replace them with exact column names from your data. Code Ocean cannot populate these fields dynamically from an uploaded table.\n\nFor paired or repeated-measures data, set Donor / Patient Column. Do not use technical batch as a donor. The analysis performs design-aware filtering, TMM normalization, and limma-voom modeling."
+    "instructions": "Run differential expression from raw integer-like counts and sample metadata. Choose Table for one counts table plus one metadata table (CSV, TSV, or RDS), or MOO for one MOSuite multiOmicDataSet (.rds). Auto detects a table only when it finds one unambiguous counts/metadata pair; otherwise it accepts exactly one .rds and validates that it is a MOO.\n\nThe default column names match the included training example: GeneName, Sample, Group, and Batch. Replace them with exact column names from your data. In MOO mode, the feature and sample-ID columns are extracted from the object.\n\nFor paired or repeated-measures data, set Donor / Patient Column. Do not use technical batch as a donor. The analysis performs design-aware filtering, TMM normalization, and limma-voom modeling."
   },
   "datasets": [],
   "categories": [
     {
       "id": "input",
       "name": "📁 Input Data",
-      "help_text": "Provide raw counts and sample-level metadata."
+      "help_text": "Provide either raw counts plus sample metadata, or one MOSuite MOO (.rds)."
     },
     {
       "id": "design",
@@ -30,6 +30,17 @@
   ],
   "parameters": [
     {
+      "id": "input_type",
+      "category": "input",
+      "name": "Input Type",
+      "param_name": "input_type",
+      "type": "list",
+      "value_type": "string",
+      "default_value": "auto",
+      "extra_data": ["auto", "table", "moo"],
+      "help_text": "Auto uses an unambiguous counts/metadata pair when present; otherwise it accepts exactly one .rds and validates it as a MOSuite MOO. Choose Table or MOO explicitly when an asset includes multiple possible inputs."
+    },
+    {
       "id": "counts_file_upload",
       "category": "input",
       "name": "Raw Counts File",
@@ -48,6 +59,16 @@
       "value_type": "string",
       "required": false,
       "help_text": "Upload a CSV, TSV, or RDS sample-metadata table. If left blank, the adapter looks for exactly one attached file whose name contains 'metadata' or 'sample'."
+    },
+    {
+      "id": "moo_file_upload",
+      "category": "input",
+      "name": "MOSuite MOO File (Optional)",
+      "param_name": "moo_file",
+      "type": "file",
+      "value_type": "string",
+      "required": false,
+      "help_text": "One .rds containing a MOSuite multiOmicDataSet. Select Input Type = moo, or leave Auto only when the asset contains no counts/metadata table pair. The adapter extracts the raw count layer and embedded sample metadata."
     },
     {
       "id": "gene_names_column",

@@ -1,5 +1,13 @@
 # OMIX DEG Analysis
 
+## Canonical module
+
+The reusable scientific implementation is maintained in the OMIX monorepo at
+[modules/OMIX-DEG-Analysis](https://github.com/NIDAP-Community/OMIX/tree/main/modules/OMIX-DEG-Analysis).
+This repository is the deployment adapter: it owns the App Panel, input
+discovery, and runtime configuration, while released scientific changes are
+promoted from the canonical module.
+
 ## Current review implementation
 
 `code/functions/OMIX_DEG_Analysis.R` is the new raw-count implementation under
@@ -25,9 +33,27 @@ expression analysis. The baseline implementation is the supplied
 ## Current status
 
 This is **not yet a production Code Ocean capsule or an OMIX monorepo module**.
-It intentionally has no App Panel, runtime entry point, or environment
-definition until the review establishes the supported input contract and
-release behavior.
+It has a review-stage App Panel and runtime entry point, but the runtime image,
+MOO dependency overlay, and release behavior remain to be finalized.
+
+## Input contract
+
+The standard path is one raw-count table plus one sample-metadata table. The
+adapter accepts CSV, TSV, TXT, or tabular RDS files and requires the selected
+sample-ID column to match the count-table sample columns exactly.
+
+The optional MOSuite path accepts one `.rds` containing a
+`MOSuite::multiOmicDataSet` (MOO). In this mode `code/main.R` extracts the
+object's **raw** count layer and its embedded sample metadata through the
+optional `OmixMOSuite` bridge. It then passes the same portable counts-plus-
+metadata contract to the scientific DEG function. No MOO filename convention
+is required: automatic discovery accepts exactly one `.rds` and validates its
+class; otherwise the App Panel's MOO file selector must be used.
+
+MOO mode requires MOSuite, OMIX Core, and the `OmixMOSuite` bridge in the
+runtime. Ordinary table input does not install or load any of those packages.
+The `filt` MOO layer is useful for testing conversion but must not be used for
+the raw-count edgeR/voom DEG model.
 
 ## Scientific scope
 

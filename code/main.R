@@ -21,8 +21,10 @@ as_logical <- function(value, argument) {
 }
 
 option_list <- list(
+  make_option("--input_type", type = "character", default = "auto"),
   make_option("--counts_file", type = "character", default = ""),
   make_option("--metadata_file", type = "character", default = ""),
+  make_option("--moo_file", type = "character", default = ""),
   make_option("--gene_names_column", type = "character", default = "GeneName"),
   make_option("--sample_names_column", type = "character", default = "Sample"),
   make_option("--samples_to_include", type = "character", default = ""),
@@ -60,16 +62,20 @@ read_tabular_input <- function(path) {
   stop("Unsupported input extension for ", path, ". Use CSV, TSV, TXT, or RDS.")
 }
 
+find_tabular_candidates <- function(filename_pattern) {
+  search_roots <- c("/data", file.path(dirname(code_dir), "data"))
+  files <- unique(unlist(lapply(search_roots[dir.exists(search_roots)], function(root) {
+    list.files(root, pattern = "[.](csv|tsv|txt|rds)$", full.names = TRUE, recursive = TRUE, ignore.case = TRUE)
+  })))
+  files[grepl(filename_pattern, basename(files), ignore.case = TRUE)]
+}
+
 resolve_input <- function(upload_path, filename_pattern, label) {
   if (nzchar(upload_path)) {
     if (!file.exists(upload_path)) stop(label, " upload does not exist: ", upload_path)
     return(normalizePath(upload_path, mustWork = TRUE))
   }
-  search_roots <- c("/data", file.path(dirname(code_dir), "data"))
-  files <- unique(unlist(lapply(search_roots[dir.exists(search_roots)], function(root) {
-    list.files(root, pattern = "[.](csv|tsv|txt|rds)$", full.names = TRUE, recursive = TRUE, ignore.case = TRUE)
-  })))
-  candidates <- files[grepl(filename_pattern, basename(files), ignore.case = TRUE)]
+  candidates <- find_tabular_candidates(filename_pattern)
   if (length(candidates) == 1L) return(candidates)
   if (length(candidates) == 0L) {
     stop("No ", label, " file was uploaded or uniquely discovered. Upload it explicitly or attach one file named with '", filename_pattern, "'.")
@@ -77,10 +83,64 @@ resolve_input <- function(upload_path, filename_pattern, label) {
   stop("Multiple ", label, " candidates found. Upload the intended file explicitly: ", paste(candidates, collapse = ", "))
 }
 
-counts_path <- resolve_input(opt$counts_file, "count", "counts")
-metadata_path <- resolve_input(opt$metadata_file, "metadata|sample", "metadata")
-counts <- read_tabular_input(counts_path)
-metadata <- read_tabular_input(metadata_path)
+find_moo_input <- function(upload_path) {
+  if (nzchar(upload_path)) {
+    if (!file.exists(upload_path)) stop("MOO upload does not exist: ", upload_path)
+    if (tolower(tools::file_ext(upload_path)) != "rds") {
+      stop("MOO input must be an .rds file: ", upload_path)
+    }
+    return(normalizePath(upload_path, mustWork = TRUE))
+  }
+  search_roots <- c("/data", file.path(dirname(code_dir), "data"))
+  candidates <- unique(unlist(lapply(search_roots[dir.exists(search_roots)], function(root) {
+    list.files(root, pattern = "[.]rds$", full.names = TRUE, recursive = TRUE, ignore.case = TRUE)
+  })))
+  if (length(candidates) == 1L) return(candidates)
+  if (length(candidates) == 0L) {
+    stop("No MOO .rds file was uploaded or uniquely discovered. Upload it explicitly.")
+  }
+  stop("Multiple .rds files were found. Upload the intended MOO explicitly: ", paste(candidates, collapse = ", "))
+}
+
+input_type <- tolower(trimws(opt$input_type))
+if (!input_type %in% c("auto", "table", "moo")) {
+  stop("--input_type must be one of: auto, table, moo.")
+}
+if (nzchar(opt$moo_file) && (nzchar(opt$counts_file) || nzchar(opt$metadata_file))) {
+  stop("Use either --moo_file or --counts_file/--metadata_file, not both.")
+}
+
+has_explicit_table_input <- nzchar(opt$counts_file) || nzchar(opt$metadata_file)
+use_moo <- identical(input_type, "moo") || nzchar(opt$moo_file)
+if (identical(input_type, "auto") && !use_moo && !has_explicit_table_input) {
+  count_candidates <- find_tabular_candidates("count")
+  metadata_candidates <- find_tabular_candidates("metadata|sample")
+  use_moo <- length(count_candidates) == 0L && length(metadata_candidates) == 0L
+}
+
+if (use_moo) {
+  if (!requireNamespace("OmixMOSuite", quietly = TRUE)) {
+    stop(
+      "MOO input requires the optional OmixMOSuite bridge and MOSuite runtime. ",
+      "Use table input or install the supported bridge before running this mode."
+    )
+  }
+  moo_path <- find_moo_input(opt$moo_file)
+  omix_input <- OmixMOSuite::omix_read_mosuite_rds(moo_path, count_type = "raw")
+  counts <- omix_input$counts
+  metadata <- omix_input$metadata
+  counts_path <- paste0("MOO raw count layer: ", moo_path)
+  metadata_path <- paste0("MOO embedded sample metadata: ", moo_path)
+  opt$gene_names_column <- omix_input$feature_id_column
+  opt$sample_names_column <- omix_input$sample_id_column
+  message("MOO input: extracted raw counts and aligned sample metadata from ", moo_path)
+} else {
+  if (identical(input_type, "moo")) stop("MOO input mode requires a MOO .rds file.")
+  counts_path <- resolve_input(opt$counts_file, "count", "counts")
+  metadata_path <- resolve_input(opt$metadata_file, "metadata|sample", "metadata")
+  counts <- read_tabular_input(counts_path)
+  metadata <- read_tabular_input(metadata_path)
+}
 
 selected_samples <- split_csv(opt$samples_to_include)
 if (length(selected_samples) == 0L) {
