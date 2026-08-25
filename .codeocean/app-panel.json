@@ -195,8 +195,19 @@
       "type": "list",
       "value_type": "string",
       "default_value": "TMM",
-      "extra_data": ["TMM", "TMMwsp", "RLE", "upperquartile"],
-      "help_text": "edgeR library-size normalization method. TMM is the default."
+      "extra_data": ["TMM", "TMM + Quantile", "Quantile", "TMM + Scale", "TMM + Cyclic Loess", "TMMwsp", "RLE", "Upper Quartile"],
+      "help_text": "Combined edgeR and voom normalization profile. TMM (default) applies TMM library-size normalization with no additional voom-scale adjustment. TMM + Quantile is useful for severe technical distributional noise; Quantile uses voom-scale quantile normalization without TMM."
+    },
+    {
+      "id": "write_normalization_diagnostics",
+      "category": "processing",
+      "name": "Write Normalization Diagnostics",
+      "param_name": "write_normalization_diagnostics",
+      "type": "list",
+      "value_type": "string",
+      "default_value": "true",
+      "extra_data": ["true", "false"],
+      "help_text": "Recommended. Writes before-and-after boxplots and density plots of filtered log-CPM values. Use these QC plots to assess whether a stronger normalization profile is justified."
     },
     {
       "id": "summarization_method",
@@ -212,6 +223,8 @@
   ],
   "results": [
     {"file_name": "DEG_Analysis.csv"},
-    {"file_name": "DEG_Analysis_run_summary.txt"}
+    {"file_name": "DEG_Analysis_run_summary.txt"},
+    {"file_name": "normalization_boxplots.png"},
+    {"file_name": "normalization_densities.png"}
   ]
 }
