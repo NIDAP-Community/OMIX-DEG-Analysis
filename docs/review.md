@@ -44,3 +44,37 @@
 3. Add Code Ocean-specific `code/main.R`, `code/run`, App Panel metadata, and
    an environment overlay.
 4. Validate in Code Ocean using a representative paired dataset before release.
+# First implementation: raw counts plus Limma-style model selection
+
+The first review implementation is `code/functions/OMIX_DEG_Analysis.R`.
+It deliberately combines:
+
+1. raw count validation and duplicate-gene summarisation;
+2. `edgeR::filterByExpr()` using biological groups;
+3. TMM normalisation and `limma::voom()`;
+4. the Limma template's selectable linear or `duplicateCorrelation` model;
+5. a single wide output table whose right-most columns are downstream
+   expression values.
+
+The statistical model includes all selected technical batch columns. The
+right-most expression block removes selected technical batches while preserving
+comparison groups. In a repeated-measures analysis it also removes the donor
+effect by default, matching the useful downstream behaviour of the paired
+template. Neither adjustment changes the fitted DE statistics.
+
+Technical replicate policy: a donor-by-comparison-group combination with more
+than one sample is rejected. A future aggregation policy must be explicit and
+validated; the implementation must never silently select one replicate.
+
+## Pending validation
+
+- Run `OMIX_TEMPLATE_LIBRARY=../template-library Rscript
+  tests/manual/validate-legacy-equivalence.R` from the repository root. The
+  fixed synthetic fixture currently matches `DEG_Analysis_v193.R` (unpaired)
+  and `DEG_Paired_v53.R` (paired) to less than `1e-8` for logFC and p-values
+  when filtering and batch adjustment are disabled for an equivalent model.
+- Add a real, de-identified raw-count validation fixture before release.
+- Agree numerical tolerances for retained genes, coefficients, p-values, FDR,
+  and the downstream expression block.
+- Decide whether donor removal should remain the default downstream expression
+  behaviour for every repeated-measures use case.

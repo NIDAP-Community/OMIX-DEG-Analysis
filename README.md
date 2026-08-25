@@ -1,5 +1,22 @@
 # OMIX DEG Analysis
 
+## Current review implementation
+
+`code/functions/OMIX_DEG_Analysis.R` is the new raw-count implementation under
+review. It uses the selectable linear / repeated-measures model structure of
+the Limma template, but it front-loads raw-count validation, design-aware
+filtering, edgeR TMM normalisation, and limma-voom preparation.
+
+The returned DEG table places statistical results first and one downstream
+expression column per sample at the far right. Those expression values are
+batch-adjusted voom values when a valid adjustment is requested; DE statistics
+are always fit using the full voom model, not the adjusted matrix.
+
+The older paired template remains unchanged in this repository as a validation
+reference. The unpaired and paired templates in `template-library/templates/`
+will be used for regression comparisons before this becomes a capsule or an
+OMIX monorepo module.
+
 Review-stage repository for paired and repeated-measures differential gene
 expression analysis. The baseline implementation is the supplied
 `DEG_Paired_v53.R` template, preserved unchanged in
