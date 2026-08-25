@@ -78,3 +78,48 @@ validated; the implementation must never silently select one replicate.
   and the downstream expression block.
 - Decide whether donor removal should remain the default downstream expression
   behaviour for every repeated-measures use case.
+
+## Future input-adapter plan
+
+The DEG scientific function remains platform- and object-model-neutral: it
+accepts validated raw counts plus sample metadata. OMIX Core will define that
+standard input contract and shared validation helpers.
+
+After the count-table capsule is released and validated, add optional bridges:
+
+1. **MOSuite bridge:** use the MOSuite-supported count extractor to convert a
+   selected `multiOmicDataSet` count type and its sample metadata into the
+   OMIX Core input. MOSuite is required only for this input mode.
+2. **Seurat bridge:** use SeuratObject to retrieve a selected assay's raw
+   count layer and cell metadata, then aggregate cells into sample-level
+   pseudobulk counts (usually within a selected cell type). The DEG function
+   must receive pseudobulk samples, not individual cells as replicates.
+
+Neither object-specific dependency belongs in the core DEG implementation or
+the default portable runtime.
+
+## App Panel next milestone
+
+The first Code Ocean App Panel will expose the standard count-table path only:
+
+- input counts and sample metadata;
+- feature-ID and sample-ID columns;
+- one or two biological comparison columns and requested contrasts;
+- optional fixed covariates, technical batch column(s), and donor column;
+- design-aware filtering and the downstream-expression output policy.
+
+MOO and Seurat choices will be added only with their corresponding optional
+bridges, rather than mixing object-specific controls into the initial panel.
+
+## Paired-analysis test data
+
+The CCBR bulk training dataset cannot use `Batch` as a donor/patient proxy:
+for the A-versus-B subset, each batch contains a duplicate condition and
+therefore represents technical replication, not a paired design. This is an
+expected rejection case for the new technical-replicate guard.
+
+Its `Replicate` column has one A and one B sample for each of three values. It
+may be used only as a **mock paired computational smoke test** of the
+`duplicateCorrelation` code path, clearly labeled as synthetic pairing. A
+real paired validation requires de-identified data with genuine repeated
+samples from at least three donors.
