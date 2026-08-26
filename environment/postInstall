@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+set -e
+
+Rscript -e "remotes::install_github('CCBR/MOSuite@5c80b4493d546d9298131e745cc7812f51a2a297', upgrade = 'never')"
+Rscript -e "remotes::install_github('NIDAP-Community/OMIX', subdir = 'core', upgrade = 'never')"
+Rscript -e "remotes::install_github('NIDAP-Community/OMIX', subdir = 'bridges/mosuite', upgrade = 'never')"

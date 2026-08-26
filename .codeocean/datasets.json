@@ -1,0 +1,17 @@
+{
+	"version": 1,
+	"attached_datasets": [
+		{
+			"id": "09c9be79-c184-4a31-a583-8261e146035d",
+			"mount": "filteredRDS"
+		},
+		{
+			"id": "113d28d3-27f5-4220-8112-1dcc97dce0e4",
+			"mount": "deg-training"
+		},
+		{
+			"id": "6b72a755-1e91-42d1-9136-48a37f427bde",
+			"mount": "sample_metadata"
+		}
+	]
+}

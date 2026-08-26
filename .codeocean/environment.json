@@ -1,0 +1,10 @@
+{
+	"version": 1,
+	"base_image": "codeocean/omix-r-statistics:r4.4.3-bioconductor3.20-v1",
+	"post_install": true,
+	"options": {
+		"registry_host_arg": true,
+		"git_ask_pass": true,
+		"mount_secrets": true
+	}
+}

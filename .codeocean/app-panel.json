@@ -1,217 +1,250 @@
 {
-  "version": 1,
-  "named_parameters": true,
-  "general": {
-    "title": "OMIX DEG Analysis",
-    "instructions": "Run differential expression from raw integer-like counts and sample metadata. Choose Table for one counts table plus one metadata table (CSV, TSV, or RDS), or MOO for one MOSuite multiOmicDataSet (.rds). Auto detects a table only when it finds one unambiguous counts/metadata pair; otherwise it accepts exactly one .rds and validates that it is a MOO.\n\nThe default column names match the included training example: GeneName, Sample, Group, and Batch. Replace them with exact column names from your data. In MOO mode, the feature and sample-ID columns are extracted from the object.\n\nFor paired or repeated-measures data, set Donor / Patient Column. Do not use technical batch as a donor. The analysis performs design-aware filtering, TMM normalization, and limma-voom modeling."
-  },
-  "datasets": [],
-  "categories": [
-    {
-      "id": "input",
-      "name": "📁 Input Data",
-      "help_text": "Provide either raw counts plus sample metadata, or one MOSuite MOO (.rds)."
-    },
-    {
-      "id": "design",
-      "name": "🧪 Experimental Design",
-      "help_text": "Define biological comparisons and any sample-level adjustment variables."
-    },
-    {
-      "id": "processing",
-      "name": "⚙️ Processing and Output",
-      "help_text": "Configure filtering and the downstream expression block."
-    },
-    {
-      "id": "advanced",
-      "name": "🔬 Advanced",
-      "help_text": "Use only when the standard defaults are unsuitable."
-    }
-  ],
-  "parameters": [
-    {
-      "id": "input_type",
-      "category": "input",
-      "name": "Input Type",
-      "param_name": "input_type",
-      "type": "list",
-      "value_type": "string",
-      "default_value": "auto",
-      "extra_data": ["auto", "table", "moo"],
-      "help_text": "Auto uses an unambiguous counts/metadata pair when present; otherwise it accepts exactly one .rds and validates it as a MOSuite MOO. Choose Table or MOO explicitly when an asset includes multiple possible inputs."
-    },
-    {
-      "id": "counts_file_upload",
-      "category": "input",
-      "name": "Raw Counts File",
-      "param_name": "counts_file",
-      "type": "file",
-      "value_type": "string",
-      "required": false,
-      "help_text": "Upload a CSV, TSV, or RDS count table. If left blank, the adapter looks for exactly one attached file whose name contains 'count'."
-    },
-    {
-      "id": "metadata_file_upload",
-      "category": "input",
-      "name": "Sample Metadata File",
-      "param_name": "metadata_file",
-      "type": "file",
-      "value_type": "string",
-      "required": false,
-      "help_text": "Upload a CSV, TSV, or RDS sample-metadata table. If left blank, the adapter looks for exactly one attached file whose name contains 'metadata' or 'sample'."
-    },
-    {
-      "id": "moo_file_upload",
-      "category": "input",
-      "name": "MOSuite MOO File (Optional)",
-      "param_name": "moo_file",
-      "type": "file",
-      "value_type": "string",
-      "required": false,
-      "help_text": "One .rds containing a MOSuite multiOmicDataSet. Select Input Type = moo, or leave Auto only when the asset contains no counts/metadata table pair. The adapter extracts the raw count layer and embedded sample metadata."
-    },
-    {
-      "id": "gene_names_column",
-      "category": "input",
-      "name": "Feature ID Column",
-      "param_name": "gene_names_column",
-      "type": "text",
-      "value_type": "string",
-      "default_value": "GeneName",
-      "required": true,
-      "help_text": "Column in the count table containing feature or gene identifiers. Default matches the demo data."
-    },
-    {
-      "id": "sample_names_column",
-      "category": "input",
-      "name": "Sample ID Column",
-      "param_name": "sample_names_column",
-      "type": "text",
-      "value_type": "string",
-      "default_value": "Sample",
-      "required": true,
-      "help_text": "Metadata column whose values exactly match count-table sample columns."
-    },
-    {
-      "id": "samples_to_include",
-      "category": "input",
-      "name": "Samples to Include (Optional)",
-      "param_name": "samples_to_include",
-      "type": "text",
-      "value_type": "string",
-      "default_value": "",
-      "help_text": "Comma-separated sample IDs. Leave blank to use all metadata samples that occur in the count table."
-    },
-    {
-      "id": "contrast_variable_columns",
-      "category": "design",
-      "name": "Biological Group Column(s)",
-      "param_name": "contrast_variable_columns",
-      "type": "text",
-      "value_type": "string",
-      "default_value": "Group",
-      "required": true,
-      "help_text": "One metadata column, or two comma-separated columns for a two-factor design. Default matches the demo data."
-    },
-    {
-      "id": "contrasts",
-      "category": "design",
-      "name": "Contrasts",
-      "param_name": "contrasts",
-      "type": "text",
-      "value_type": "string",
-      "default_value": "B-A",
-      "required": true,
-      "help_text": "Comma-separated numerator-denominator comparisons, for example B-A or Treatment.Responder-Control.Responder."
-    },
-    {
-      "id": "covariate_columns",
-      "category": "design",
-      "name": "Additional Fixed Covariates (Optional)",
-      "param_name": "covariate_columns",
-      "type": "text",
-      "value_type": "string",
-      "default_value": "",
-      "help_text": "Comma-separated metadata columns to include as fixed effects. Do not repeat the donor column here."
-    },
-    {
-      "id": "batch_effect_columns",
-      "category": "design",
-      "name": "Technical Batch Column(s) (Optional)",
-      "param_name": "batch_effect_columns",
-      "type": "text",
-      "value_type": "string",
-      "default_value": "Batch",
-      "help_text": "Comma-separated technical batch columns. They are included in the DE model and removed from the downstream expression block. Clear this field when no batch variable is present."
-    },
-    {
-      "id": "donor_variable_column",
-      "category": "design",
-      "name": "Donor / Patient Column (Optional)",
-      "param_name": "donor_variable_column",
-      "type": "text",
-      "value_type": "string",
-      "default_value": "",
-      "help_text": "Set for genuine repeated-measures designs. The model uses duplicateCorrelation and rejects unaggregated donor-by-group technical replicates."
-    },
-    {
-      "id": "filter_low_expression",
-      "category": "processing",
-      "name": "Apply Design-Aware Low-Expression Filtering",
-      "param_name": "filter_low_expression",
-      "type": "list",
-      "value_type": "string",
-      "default_value": "true",
-      "extra_data": ["true", "false"],
-      "help_text": "Recommended. Uses edgeR::filterByExpr with the biological group design before TMM and voom."
-    },
-    {
-      "id": "return_batch_corrected_values",
-      "category": "processing",
-      "name": "Append Adjusted Expression Columns",
-      "param_name": "return_batch_corrected_values",
-      "type": "list",
-      "value_type": "string",
-      "default_value": "true",
-      "extra_data": ["true", "false"],
-      "help_text": "Recommended. Appends batch-adjusted voom expression values at the right of DEG_Analysis.csv. This never changes DE statistics."
-    },
-    {
-      "id": "remove_donor_effect_for_downstream",
-      "category": "processing",
-      "name": "Remove Donor Effect from Downstream Expression",
-      "param_name": "remove_donor_effect_for_downstream",
-      "type": "list",
-      "value_type": "string",
-      "default_value": "true",
-      "extra_data": ["true", "false"],
-      "help_text": "Applies only when Donor / Patient Column is set. Retains biological group effects for downstream visualization."
-    },
-    {
-      "id": "normalization_method",
-      "category": "advanced",
-      "name": "Normalization Method",
-      "param_name": "normalization_method",
-      "type": "list",
-      "value_type": "string",
-      "default_value": "TMM",
-      "extra_data": ["TMM", "TMMwsp", "RLE", "upperquartile"],
-      "help_text": "edgeR library-size normalization method. TMM is the default."
-    },
-    {
-      "id": "summarization_method",
-      "category": "advanced",
-      "name": "Duplicate Feature-ID Handling",
-      "param_name": "summarization_method",
-      "type": "list",
-      "value_type": "string",
-      "default_value": "sum",
-      "extra_data": ["sum", "mean", "max"],
-      "help_text": "How duplicate feature IDs are combined before modeling. Use sum for raw RNA-seq counts."
-    }
-  ],
-  "results": [
-    {"file_name": "DEG_Analysis.csv"},
-    {"file_name": "DEG_Analysis_run_summary.txt"}
-  ]
+	"version": 1,
+	"named_parameters": true,
+	"general": {
+		"title": "OMIX DEG Analysis",
+		"instructions": "Run differential expression from raw integer-like counts and sample metadata. Choose Table for one counts table plus one metadata table (CSV, TSV, or RDS), or MOO for one MOSuite multiOmicDataSet (.rds). Auto detects a table only when it finds one unambiguous counts/metadata pair; otherwise it accepts exactly one .rds and validates that it is a MOO.\n\nThe default column names match the included training example: GeneName, Sample, Group, and Batch. Replace them with exact column names from your data. In MOO mode, the feature and sample-ID columns are extracted from the object.\n\nFor paired or repeated-measures data, set Donor / Patient Column. Do not use technical batch as a donor. The analysis performs design-aware filtering, TMM normalization, and limma-voom modeling."
+	},
+	"datasets": [
+		{
+			"id": "113d28d3-27f5-4220-8112-1dcc97dce0e4",
+			"name": "Example filtered-count table",
+			"description": "Filtered bulk RNA-seq counts for the DEG training analysis.",
+			"help_text": "Example count table for a bulk RNA-seq DEG analysis.\n\nUse this with the matching **Example sample metadata** input. It contains integer-like, pre-filtered gene counts: genes in rows and biological samples in columns.\n\nTo analyze your own data, replace it with a raw or pre-filtered count table (CSV, TSV, or RDS). Do not use normalized or log-transformed expression values."
+		},
+		{
+			"id": "6b72a755-1e91-42d1-9136-48a37f427bde",
+			"name": "Example Sample Metadata",
+			"description": "Sample metadata for Bulk RNA-Seq Demo Database",
+			"help_text": "This is a sample-metadata table, with a sample-ID column matching the count-table column names exactly."
+		}
+	],
+	"categories": [
+		{
+			"id": "input",
+			"name": "📁 Input Data",
+			"help_text": "Provide either raw counts plus sample metadata, or one MOSuite MOO (.rds)."
+		},
+		{
+			"id": "design",
+			"name": "🧪 Experimental Design",
+			"help_text": "Define biological comparisons and any sample-level adjustment variables."
+		},
+		{
+			"id": "processing",
+			"name": "⚙️ Processing and Output",
+			"help_text": "Configure filtering and the downstream expression block."
+		},
+		{
+			"id": "advanced",
+			"name": "🔬 Advanced",
+			"help_text": "Use only when the standard defaults are unsuitable."
+		}
+	],
+	"parameters": [
+		{
+			"id": "input_type",
+			"category": "input",
+			"name": "Input Type",
+			"param_name": "input_type",
+			"help_text": "Auto uses an unambiguous counts/metadata pair when present; otherwise it accepts exactly one .rds and validates it as a MOSuite MOO. Choose Table or MOO explicitly when an asset includes multiple possible inputs.",
+			"type": "list",
+			"value_type": "string",
+			"default_value": "auto",
+			"extra_data": [
+				"auto",
+				"table",
+				"moo"
+			]
+		},
+		{
+			"id": "counts_file_upload",
+			"category": "input",
+			"name": "Filtered Raw Counts File",
+			"param_name": "counts_file",
+			"help_text": "Upload a CSV, TSV, or RDS count table. If left blank, the adapter looks for exactly one attached file whose name contains 'count'.",
+			"type": "file",
+			"value_type": "string"
+		},
+		{
+			"id": "metadata_file_upload",
+			"category": "input",
+			"name": "Sample Metadata File",
+			"param_name": "metadata_file",
+			"help_text": "Upload a CSV, TSV, or RDS sample-metadata table. If left blank, the adapter looks for exactly one attached file whose name contains 'metadata' or 'sample'.",
+			"type": "file",
+			"value_type": "string"
+		},
+		{
+			"id": "moo_file_upload",
+			"category": "input",
+			"name": "MOSuite MOO File (Optional)",
+			"param_name": "moo_file",
+			"help_text": "One .rds containing a MOSuite multiOmicDataSet. Select Input Type = moo, or leave Auto only when the asset contains no counts/metadata table pair. The adapter extracts the raw count layer and embedded sample metadata.",
+			"type": "file",
+			"value_type": "string"
+		},
+		{
+			"id": "gene_names_column",
+			"category": "input",
+			"name": "Feature ID Column",
+			"param_name": "gene_names_column",
+			"help_text": "Column in the count table containing feature or gene identifiers. Default matches the demo data.",
+			"type": "text",
+			"value_type": "string",
+			"default_value": "GeneName",
+			"required": true
+		},
+		{
+			"id": "sample_names_column",
+			"category": "input",
+			"name": "Sample ID Column",
+			"param_name": "sample_names_column",
+			"help_text": "Metadata column whose values exactly match count-table sample columns.",
+			"type": "text",
+			"value_type": "string",
+			"default_value": "Sample",
+			"required": true
+		},
+		{
+			"id": "samples_to_include",
+			"category": "input",
+			"name": "Samples to Include (Optional)",
+			"param_name": "samples_to_include",
+			"help_text": "Comma-separated sample IDs. Leave blank to use all metadata samples that occur in the count table.",
+			"type": "text",
+			"value_type": "string"
+		},
+		{
+			"id": "contrast_variable_columns",
+			"category": "design",
+			"name": "Biological Group Column(s)",
+			"param_name": "contrast_variable_columns",
+			"help_text": "One metadata column, or two comma-separated columns for a two-factor design. Default matches the demo data.",
+			"type": "text",
+			"value_type": "string",
+			"default_value": "Group",
+			"required": true
+		},
+		{
+			"id": "contrasts",
+			"category": "design",
+			"name": "Contrasts",
+			"param_name": "contrasts",
+			"help_text": "Comma-separated numerator-denominator comparisons, for example B-A or Treatment.Responder-Control.Responder.",
+			"type": "text",
+			"value_type": "string",
+			"default_value": "B-A",
+			"required": true
+		},
+		{
+			"id": "covariate_columns",
+			"category": "design",
+			"name": "Additional Fixed Covariates (Optional)",
+			"param_name": "covariate_columns",
+			"help_text": "Comma-separated metadata columns to include as fixed effects. Do not repeat the donor column here.",
+			"type": "text",
+			"value_type": "string"
+		},
+		{
+			"id": "batch_effect_columns",
+			"category": "design",
+			"name": "Technical Batch Column(s) (Optional)",
+			"param_name": "batch_effect_columns",
+			"help_text": "Comma-separated technical batch columns. They are included in the DE model and removed from the downstream expression block. Clear this field when no batch variable is present.",
+			"type": "text",
+			"value_type": "string",
+			"default_value": "Batch"
+		},
+		{
+			"id": "donor_variable_column",
+			"category": "design",
+			"name": "Donor / Patient Column (Optional)",
+			"param_name": "donor_variable_column",
+			"help_text": "Set for genuine repeated-measures designs. The model uses duplicateCorrelation and rejects unaggregated donor-by-group technical replicates.",
+			"type": "text",
+			"value_type": "string"
+		},
+		{
+			"id": "filter_low_expression",
+			"category": "processing",
+			"name": "Apply Design-Aware Low-Expression Filtering",
+			"param_name": "filter_low_expression",
+			"help_text": "Recommended. Uses edgeR::filterByExpr with the biological group design before TMM and voom.",
+			"type": "list",
+			"value_type": "string",
+			"default_value": "true",
+			"extra_data": [
+				"true",
+				"false"
+			]
+		},
+		{
+			"id": "return_batch_corrected_values",
+			"category": "processing",
+			"name": "Append Adjusted Expression Columns",
+			"param_name": "return_batch_corrected_values",
+			"help_text": "Recommended. Appends batch-adjusted voom expression values at the right of DEG_Analysis.csv. This never changes DE statistics.",
+			"type": "list",
+			"value_type": "string",
+			"default_value": "true",
+			"extra_data": [
+				"true",
+				"false"
+			]
+		},
+		{
+			"id": "remove_donor_effect_for_downstream",
+			"category": "processing",
+			"name": "Remove Donor Effect from Downstream Expression",
+			"param_name": "remove_donor_effect_for_downstream",
+			"help_text": "Applies only when Donor / Patient Column is set. Retains biological group effects for downstream visualization.",
+			"type": "list",
+			"value_type": "string",
+			"default_value": "true",
+			"extra_data": [
+				"true",
+				"false"
+			]
+		},
+		{
+			"id": "normalization_method",
+			"category": "advanced",
+			"name": "Normalization Method",
+			"param_name": "normalization_method",
+			"help_text": "edgeR library-size normalization method. TMM is the default.",
+			"type": "list",
+			"value_type": "string",
+			"default_value": "TMM",
+			"extra_data": [
+				"TMM",
+				"TMMwsp",
+				"RLE",
+				"upperquartile"
+			]
+		},
+		{
+			"id": "summarization_method",
+			"category": "advanced",
+			"name": "Duplicate Feature-ID Handling",
+			"param_name": "summarization_method",
+			"help_text": "How duplicate feature IDs are combined before modeling. Use sum for raw RNA-seq counts.",
+			"type": "list",
+			"value_type": "string",
+			"default_value": "sum",
+			"extra_data": [
+				"sum",
+				"mean",
+				"max"
+			]
+		}
+	],
+	"results": [
+		{
+			"file_name": "DEG_Analysis.csv"
+		},
+		{
+			"file_name": "DEG_Analysis_run_summary.txt"
+		}
+	]
 }

@@ -1,0 +1,10 @@
+metadata_version: 1
+name: OMIX DEG Analysis
+description: Differential-expression analysis for bulk RNA-seq raw counts and sample
+  metadata. Performs design-aware filtering, selectable edgeR/voom normalization,
+  limma-voom modeling, optional batch adjustment, and repeated-measures analysis.
+tags:
+- Differential expression
+- RNA-seq
+authors:
+- name: Margaret Cam
