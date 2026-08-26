@@ -63,18 +63,27 @@ read_tabular_input <- function(path) {
   stop("Unsupported input extension for ", path, ". Use CSV, TSV, TXT, or RDS.")
 }
 
+canonical_data_path <- function(path) {
+  # Code Ocean can expose the same mounted data directory as both /data and
+  # //data. Collapse repeated leading slashes so one physical file is not
+  # treated as two discovered inputs.
+  path <- normalizePath(path, mustWork = TRUE, winslash = "/")
+  sub("^/{2,}", "/", path)
+}
+
 find_tabular_candidates <- function(filename_pattern) {
   search_roots <- c("/data", file.path(dirname(code_dir), "data"))
   files <- unique(unlist(lapply(search_roots[dir.exists(search_roots)], function(root) {
     list.files(root, pattern = "[.](csv|tsv|txt|rds)$", full.names = TRUE, recursive = TRUE, ignore.case = TRUE)
   })))
+  files <- unique(vapply(files, canonical_data_path, character(1)))
   files[grepl(filename_pattern, basename(files), ignore.case = TRUE)]
 }
 
 resolve_input <- function(upload_path, filename_pattern, label) {
   if (nzchar(upload_path)) {
     if (!file.exists(upload_path)) stop(label, " upload does not exist: ", upload_path)
-    return(normalizePath(upload_path, mustWork = TRUE))
+    return(canonical_data_path(upload_path))
   }
   candidates <- find_tabular_candidates(filename_pattern)
   if (length(candidates) == 1L) return(candidates)
