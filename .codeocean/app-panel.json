@@ -7,13 +7,13 @@
 	},
 	"datasets": [
 		{
-			"id": "6b72a755-1e91-42d1-9136-48a37f427bde",
+			"id": "6e1b0397-83d6-457a-9caa-0f5956e038c8",
 			"name": "Example Sample Metadata",
 			"description": "Sample metadata for Bulk RNA-Seq Demo Database",
 			"help_text": "This is a sample-metadata table, with a sample-ID column matching the count-table column names exactly."
 		},
 		{
-			"id": "113d28d3-27f5-4220-8112-1dcc97dce0e4",
+			"id": "9c31375c-8768-4ac1-ac92-4cc20a9605f1",
 			"name": "Example filtered-count table",
 			"description": "Filtered bulk RNA-seq counts for the DEG training analysis.",
 			"help_text": "Example count table for a bulk RNA-seq DEG analysis.\n\nUse this with the matching **Example sample metadata** input. It contains integer-like, pre-filtered gene counts: genes in rows and biological samples in columns.\n\nTo analyze your own data, replace it with a raw or pre-filtered count table (CSV, TSV, or RDS). Do not use normalized or log-transformed expression values."
