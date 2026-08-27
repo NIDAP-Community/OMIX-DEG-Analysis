@@ -212,7 +212,7 @@
 			"category": "processing",
 			"name": "Write Normalization Diagnostics",
 			"param_name": "write_normalization_diagnostics",
-			"help_text": "Recommended. Writes before-and-after boxplots and density plots of filtered log-CPM values. Use these QC plots to assess whether a stronger normalization profile is justified.",
+			"help_text": "Recommended. Writes before-and-after boxplots and density plots of filtered log-CPM values, plus the voom mean-variance trend used for precision weights. Use these QC plots to assess filtering and whether a stronger normalization profile is justified.",
 			"type": "list",
 			"value_type": "string",
 			"default_value": "true",
@@ -269,6 +269,9 @@
 		},
 		{
 			"file_name": "normalization_densities.png"
+		},
+		{
+			"file_name": "voom_mean_variance.png"
 		}
 	]
 }

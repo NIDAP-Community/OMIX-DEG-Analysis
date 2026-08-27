@@ -51,13 +51,15 @@ Normalization does not replace modelling known technical batch variables.
 
 ### Normalization diagnostics
 
-The runtime writes `normalization_boxplots.png` and
-`normalization_densities.png` by default. Each file compares filtered log-CPM
-values before normalization with the final voom values used for modelling.
-Disable this output with `--write_normalization_diagnostics false`. When
-calling `omix_deg_analysis()` directly, set
-`normalization_diagnostics = TRUE` and supply `diagnostics_output_dir` to write
-the same files.
+The runtime writes `normalization_boxplots.png`,
+`normalization_densities.png`, and `voom_mean_variance.png` by default. The
+first two compare filtered log-CPM values before normalization with the final
+voom values used for modelling. The mean-variance plot shows the voom trend
+used to estimate precision weights and is useful for checking low-count
+filtering and model preparation. Disable these outputs with
+`--write_normalization_diagnostics false`. When calling `omix_deg_analysis()`
+directly, set `normalization_diagnostics = TRUE` and supply
+`diagnostics_output_dir` to write the same files.
 
 ### References
 
@@ -99,6 +101,16 @@ runtime. Ordinary table input does not install or load any of those packages.
 The `filt` MOO layer is useful for testing conversion but must not be used for
 the raw-count edgeR/voom DEG model.
 
+## Optional Seurat pseudobulk source
+
+The platform-neutral
+[OmixSeurat bridge](https://github.com/NIDAP-Community/OMIX/tree/main/bridges/seurat)
+can convert a Seurat object into donor-by-condition pseudobulk count and
+metadata tables. That conversion occurs before this adapter: select **Table**
+input and supply the generated files. Direct Seurat RDS input is not yet an
+adapter option, so the capsule runtime does not install Seurat or SeuratObject
+for ordinary DEG use.
+
 ## Scientific scope
 
 The template performs repeated-measures differential-expression analysis with
@@ -111,6 +123,10 @@ The output is a wide differential-expression table with comparison-specific
 `_FC`, `_logFC`, `_SE`, `_tstat`, `_pval`, and `_adjpval` columns. This shape is
 compatible with the downstream OMIX GSEA and L2P workflows after its interface
 is finalized.
+
+Each comparison group requires at least two biological samples. For single-cell
+data, aggregate raw counts by donor and condition before modelling; individual
+cells are not independent replicates.
 
 ## Baseline provenance
 
