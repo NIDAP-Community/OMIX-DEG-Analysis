@@ -1,122 +1,181 @@
 # OMIX DEG Analysis
 
-## Canonical module
+## Code Ocean deployment repository
 
-The reusable scientific implementation is maintained in the OMIX monorepo at
-[modules/OMIX-DEG-Analysis](https://github.com/NIDAP-Community/OMIX/tree/main/modules/OMIX-DEG-Analysis).
-This repository is the deployment adapter: it owns the App Panel, input
-discovery, and runtime configuration, while released scientific changes are
-promoted from the canonical module.
+This public repository is the **Code Ocean deployment repository** for OMIX DEG
+Analysis. It contains the Code Ocean-ready entry point, app-panel definition,
+runtime adapter, and tests needed to run the analysis as a capsule.
 
-## Current review implementation
+For portable local R use and the canonical scientific implementation, start
+with the [OMIX monorepo](https://github.com/NIDAP-Community/OMIX). The two
+repositories intentionally serve different roles: OMIX is platform-neutral;
+this repository packages that analysis for Code Ocean.
 
-`code/functions/OMIX_DEG_Analysis.R` is the new raw-count implementation under
-review. It uses the selectable linear / repeated-measures model structure of
-the Limma template, but it front-loads raw-count validation, design-aware
-filtering, edgeR TMM normalisation, and limma-voom preparation.
+OMIX DEG Analysis identifies genes whose expression differs between biological
+groups from bulk RNA-seq count data. It performs low-expression filtering,
+library-size normalization, limma-voom modelling, and optional adjustment for
+technical batch or genuine repeated measurements.
 
-The returned DEG table places statistical results first and one downstream
-expression column per sample at the far right. Those expression values are
-batch-adjusted voom values when a valid adjustment is requested; DE statistics
-are always fit using the full voom model, not the adjusted matrix.
+Use raw or pre-filtered **integer-like counts**. Do not use normalized,
+log-transformed, TPM, FPKM, or CPM expression values as input.
 
-## Summary of normalization best practices
+## Quick start
 
-| Dataset type | Recommended workflow | Reason |
+1. Provide a count table and its matching sample-metadata table, or one
+   compatible MOSuite MOO object.
+2. Set **Biological Group Column(s)** to the metadata column defining the
+   groups to compare, for example `Group`.
+3. Set **Contrasts** as `test-reference`; for example, `B-A` compares group B
+   with group A.
+4. Enter a **Technical Batch Column** only when one exists. Leave it blank
+   otherwise.
+5. Run the analysis and review `DEG_Analysis.csv` together with the diagnostic
+   plots and run summary.
+
+Each group in a contrast needs at least two samples. For paired or repeated
+measurements, enter the column that identifies the biological donor or patient;
+do not use a technical batch as a donor identifier.
+
+## Provide input data
+
+Choose one of the following approaches.
+
+### Table mode: one combined Data Asset
+
+Attach one Data Asset that contains exactly one count table and one matching
+sample-metadata table. Leave **Raw Counts File** and **Sample Metadata File**
+blank. OMIX discovers the pair automatically.
+
+The DEG-compatible MOSuite low-count-filter output uses this form:
+
+- `Filtered_Counts.csv`
+- `Sample_Metadata.csv`
+
+### Table mode: two separately selected files
+
+Use the **Raw Counts File** and **Sample Metadata File** selectors to provide
+both files explicitly. Explicit selections take precedence over automatic
+discovery and are useful when the attached data contains more than one possible
+table.
+
+### MOO mode
+
+Provide one compatible MOSuite `.rds` multiOmicDataSet object. OMIX extracts
+the raw-count layer and sample metadata automatically. This option requires the
+MOSuite bridge to be available in the runtime; ordinary table input does not.
+
+### Single-cell pseudobulk input
+
+For single-cell data, first aggregate raw counts by biological donor and
+condition into a pseudobulk count table and matching metadata table. The
+[OmixSeurat bridge](https://github.com/NIDAP-Community/OMIX/tree/main/bridges/seurat)
+can prepare these portable tables from a Seurat object before the capsule is
+run. Do not use individual cells as independent replicates in this bulk-style
+model.
+
+## Required table structure
+
+Count and metadata tables may be CSV, TSV, TXT, or tabular RDS files.
+
+### Count table
+
+- The first column contains feature identifiers; the default name is
+  `GeneName`.
+- Each remaining column contains raw or pre-filtered counts for one sample.
+- Column names must match the sample IDs in the metadata table.
+
+### Sample metadata table
+
+- One row represents one sample.
+- The default sample-ID column is `Sample`.
+- Include a column that defines the biological groups to compare, commonly
+  `Group`.
+- Include `Batch` only when a technical batch should be modelled.
+
+The app parameters let you replace `GeneName`, `Sample`, `Group`, and `Batch`
+with the exact column names in your data.
+
+## Configure the analysis
+
+### Contrasts
+
+Write each contrast as `test-reference`:
+
+- `B-A` tests B relative to A.
+- `Treatment-Control` tests Treatment relative to Control.
+- Separate multiple contrasts with commas.
+
+The sign of `logFC` follows this order: a positive value for `B-A` means higher
+expression in B than in A.
+
+### Covariates, batch, and repeated measures
+
+- **Additional Fixed Covariates**: metadata columns to include in the model,
+  such as sex or a prespecified clinical variable.
+- **Technical Batch Column(s)**: technical source of variation to adjust for,
+  such as sequencing run or library-preparation batch.
+- **Donor / Patient Column**: biological subject identifier for paired or
+  repeated-measures samples. This is not a substitute for a technical batch.
+
+## Choose normalization
+
+The default method, **TMM**, is suitable for most bulk RNA-seq studies. It
+adjusts for library-size and compositional differences before limma-voom
+modelling.
+
+| Situation | Recommended method | Notes |
 | --- | --- | --- |
-| **Typical dataset** (standard knockouts, treatments, diverse human tissues) | **Normalization Method: `TMM`** (default) [1, 2] | Preserves the observed biological range while correcting RNA-composition bias. |
-| **High technical noise** (for example, varying platforms or batch-heavy historical data) | **Normalization Method: `TMM + Quantile`** | Forces log-CPM distributions to align and can reduce severe, non-linear technical variation, at the risk of attenuating subtle or global biology. [2] |
+| Typical bulk RNA-seq experiment | **TMM** | Default; preserves biological differences while accounting for composition bias. |
+| Severe, documented technical distribution mismatch | **TMM + quantile** | Use cautiously: stronger distribution alignment can also attenuate subtle biology. |
+| Sensitivity analysis | Other available methods | Compare diagnostics and interpret differences in the context of the experimental design. |
 
-`TMM + Scale` equalizes sample medians, while `TMM + Cyclic Loess` is a
-slower, pairwise alternative that can be more robust when differential
-expression is unbalanced. `Quantile` omits TMM and applies voom-scale quantile
-normalization alone; use it only when that deliberate choice fits the study.
+The diagnostics are part of the decision: inspect the normalization plots and
+the voom mean-variance trend rather than choosing an alternative method solely
+because it is available.
 
-### Choosing a profile
+## Results
 
-- Start with **`TMM`** for a new bulk RNA-seq analysis.
-- Try **`TMM + Scale`** when QC shows a modest, sample-wide median shift after
-  TMM and there is good reason to regard it as technical.
-- Use **`TMM + Quantile`** only when QC shows a severe technical mismatch of
-  whole distributions. It is intentionally stronger and can obscure genuine
-  global shifts.
-- Use **`TMM + Cyclic Loess`** as a sensitivity analysis for nonlinear,
-  sample-specific distribution differences, particularly with unbalanced
-  differential expression.
-- Use **`Quantile`**, **`TMMwsp`**, **`RLE`**, or **`Upper Quartile`** for a
-  deliberate legacy/reproducibility comparison or a documented special case;
-  they are not routine first choices.
+The analysis writes the following primary results.
 
-Normalization does not replace modelling known technical batch variables.
+- `DEG_Analysis.csv`: differential-expression statistics for every requested
+  contrast.
+- Run summary: model settings, input checks, and analysis provenance.
+- Diagnostics: `normalization_boxplots.png`, `normalization_densities.png`,
+  and `voom_mean_variance.png`. They are written by default and can be disabled
+  with the normalization-diagnostics setting.
 
-### Normalization diagnostics
+When batch or donor adjustment is included, the expression columns appended to
+the right side of the exported table are adjusted voom-scale log-CPM values for
+downstream visualization. They are not replacements for the statistical
+results, which come from the complete fitted design.
 
-The runtime writes `normalization_boxplots.png` and
-`normalization_densities.png` by default. Each file compares filtered log-CPM
-values before normalization with the final voom values used for modelling.
-Disable this output with `--write_normalization_diagnostics false`. When
-calling `omix_deg_analysis()` directly, set
-`normalization_diagnostics = TRUE` and supply `diagnostics_output_dir` to write
-the same files.
+## Common input issues
 
-### References
+| Message or symptom | What to check |
+| --- | --- |
+| Multiple counts or metadata candidates found | Attach one combined Data Asset with exactly one pair, remove unrelated tables, or select both files explicitly. |
+| `GeneName` or `Sample` is missing | Set the corresponding parameter to the exact column name in your files. |
+| `Batch` is missing | Leave the Technical Batch setting blank, or choose the correct metadata column. |
+| Samples do not match | Count-table column names and metadata sample IDs must match exactly. |
+| A group has fewer than two samples | Add biological replicates or revise the requested contrast. |
 
-1. Robinson MD, Oshlack A. A scaling normalization method for differential expression analysis of RNA-seq data. *Genome Biology*. 2010;11:R25. [doi:10.1186/gb-2010-11-3-r25](https://doi.org/10.1186/gb-2010-11-3-r25)
-2. [limma documentation: `voom` and `normalizeBetweenArrays`](https://bioconductor.org/packages/devel/bioc/manuals/limma/man/limma.pdf)
+## Methods
 
-The older paired template remains unchanged in this repository as a validation
-reference. The unpaired and paired templates in `template-library/templates/`
-will be used for regression comparisons before this becomes a capsule or an
-OMIX monorepo module.
+OMIX uses design-aware filtering and edgeR's TMM normalization before
+limma-voom modelling with empirical-Bayes moderation. Repeated measures are
+handled through the donor-aware model path.
 
-Review-stage repository for paired and repeated-measures differential gene
-expression analysis. The baseline implementation is the supplied
-`DEG_Paired_v53.R` template, preserved unchanged in
-`code/functions/DEG_Paired_v53.R`.
+- Robinson MD, Oshlack A. A scaling normalization method for differential
+  expression analysis of RNA-seq data. *Genome Biology* 2010;11:R25.
+  [doi:10.1186/gb-2010-11-3-r25](https://doi.org/10.1186/gb-2010-11-3-r25)
+- Law CW, Chen Y, Shi W, Smyth GK. voom: Precision weights unlock linear model
+  analysis tools for RNA-seq read counts. *Genome Biology* 2014;15:R29.
+  [doi:10.1186/gb-2014-15-2-r29](https://doi.org/10.1186/gb-2014-15-2-r29)
 
-## Current status
+## For developers
 
-This is **not yet a production Code Ocean capsule or an OMIX monorepo module**.
-It has a review-stage App Panel and runtime entry point, but the runtime image,
-MOO dependency overlay, and release behavior remain to be finalized.
-
-## Input contract
-
-The standard path is one raw-count table plus one sample-metadata table. The
-adapter accepts CSV, TSV, TXT, or tabular RDS files and requires the selected
-sample-ID column to match the count-table sample columns exactly.
-
-The optional MOSuite path accepts one `.rds` containing a
-`MOSuite::multiOmicDataSet` (MOO). In this mode `code/main.R` extracts the
-object's **raw** count layer and its embedded sample metadata through the
-optional `OmixMOSuite` bridge. It then passes the same portable counts-plus-
-metadata contract to the scientific DEG function. No MOO filename convention
-is required: automatic discovery accepts exactly one `.rds` and validates its
-class; otherwise the App Panel's MOO file selector must be used.
-
-MOO mode requires MOSuite, OMIX Core, and the `OmixMOSuite` bridge in the
-runtime. Ordinary table input does not install or load any of those packages.
-The `filt` MOO layer is useful for testing conversion but must not be used for
-the raw-count edgeR/voom DEG model.
-
-## Scientific scope
-
-The template performs repeated-measures differential-expression analysis with
-`edgeR`, `limma::voom`, and `limma::duplicateCorrelation`. It models the donor
-or subject identifier as a blocking factor, supports one or two contrast
-variables, accommodates fixed-effect covariates, and can return expression
-values corrected for donor and optional technical-batch effects.
-
-The output is a wide differential-expression table with comparison-specific
-`_FC`, `_logFC`, `_SE`, `_tstat`, `_pval`, and `_adjpval` columns. This shape is
-compatible with the downstream OMIX GSEA and L2P workflows after its interface
-is finalized.
-
-## Baseline provenance
-
-- Source: `/Users/maggiec/GitHub/Maggie/NIDAP/template-library/templates/DEG_Paired_v53.R`
-- SHA-256: `417684f4330fc28171084a950bfda651b7302fd367bc94659f2609c679837537`
-- Imported without scientific or formatting changes.
-
-See [docs/review.md](docs/review.md) for the decisions required before this is
-promoted to a Code Ocean capsule and an OMIX module.
+This repository is the deployment adapter for the portable OMIX module. The
+canonical scientific implementation is maintained in the
+[OMIX monorepo](https://github.com/NIDAP-Community/OMIX). See
+[OMIX_MODULE_SOURCE.md](OMIX_MODULE_SOURCE.md) for the source map and
+[docs/review.md](docs/review.md) for review and implementation history.
