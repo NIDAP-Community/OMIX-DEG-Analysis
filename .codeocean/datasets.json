@@ -6,12 +6,8 @@
 			"mount": "filteredRDS"
 		},
 		{
-			"id": "6e1b0397-83d6-457a-9caa-0f5956e038c8",
-			"mount": "deg-training-metadata"
-		},
-		{
-			"id": "9c31375c-8768-4ac1-ac92-4cc20a9605f1",
-			"mount": "deg-training"
+			"id": "6478f7be-ec52-4eb8-b360-6d1766bebea1",
+			"mount": "filter-low-counts-deg-input"
 		}
 	]
 }
