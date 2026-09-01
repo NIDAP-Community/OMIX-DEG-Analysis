@@ -1,0 +1,13 @@
+{
+	"version": 1,
+	"attached_datasets": [
+		{
+			"id": "09c9be79-c184-4a31-a583-8261e146035d",
+			"mount": "filteredRDS"
+		},
+		{
+			"id": "6478f7be-ec52-4eb8-b360-6d1766bebea1",
+			"mount": "filter-low-counts-deg-input"
+		}
+	]
+}
