@@ -256,6 +256,9 @@
 			"file_name": "DEG_Analysis.csv"
 		},
 		{
+			"file_name": "Sample_Metadata.csv"
+		},
+		{
 			"file_name": "DEG_Analysis_run_summary.txt"
 		},
 		{

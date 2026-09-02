@@ -138,7 +138,9 @@ because it is available.
 The analysis writes the following primary results.
 
 - `DEG_Analysis.csv`: differential-expression statistics for every requested
-  contrast.
+  contrast, with sample-level expression values used for downstream plotting.
+- `Sample_Metadata.csv`: metadata for exactly the samples whose expression is
+  included in `DEG_Analysis.csv`, in matching order.
 - Run summary: model settings, input checks, and analysis provenance.
 - Diagnostics: `normalization_boxplots.png`, `normalization_densities.png`,
   and `voom_mean_variance.png`. They are written by default and can be disabled
@@ -148,6 +150,10 @@ When batch or donor adjustment is included, the expression columns appended to
 the right side of the exported table are adjusted voom-scale log-CPM values for
 downstream visualization. They are not replacements for the statistical
 results, which come from the complete fitted design.
+
+`DEG_Analysis.csv` and `Sample_Metadata.csv` are one downstream data bundle.
+Keep both files together when attaching the result to another analysis or
+visualization step.
 
 ## Common input issues
 
