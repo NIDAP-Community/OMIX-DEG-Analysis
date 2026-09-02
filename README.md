@@ -126,8 +126,9 @@ modelling.
 | Situation | Recommended method | Notes |
 | --- | --- | --- |
 | Typical bulk RNA-seq experiment | **TMM** | Default; preserves biological differences while accounting for composition bias. |
-| Severe, documented technical distribution mismatch | **TMM + quantile** | Use cautiously: stronger distribution alignment can also attenuate subtle biology. |
-| Sensitivity analysis | Other available methods | Compare diagnostics and interpret differences in the context of the experimental design. |
+| High technical noise or a severe, documented distribution mismatch | **Quantile** | Second-choice profile. It force-aligns log-CPM distributions and can suppress severe technical variation, but may attenuate subtle or global biology. |
+| Hybrid sensitivity analysis after Quantile | **TMM + Quantile** | Third-choice profile. Retains TMM library-size normalization before voom-scale quantile normalization. |
+| Other documented special cases | Remaining available methods | `TMM + Scale`, `TMM + Cyclic Loess`, `TMMwsp`, `RLE`, and `Upper Quartile` should be compared with diagnostics and interpreted in the experimental-design context. |
 
 The diagnostics are part of the decision: inspect the normalization plots and
 the voom mean-variance trend rather than choosing an alternative method solely
