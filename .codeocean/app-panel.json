@@ -259,7 +259,7 @@
 			"file_name": "Sample_Metadata.csv"
 		},
 		{
-			"file_name": "DEG_Analysis_run_summary.txt"
+			"file_name": "run_summary.txt"
 		},
 		{
 			"file_name": "normalization_boxplots.png"
