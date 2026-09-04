@@ -1,15 +1,23 @@
 # OMIX DEG Analysis
 
-## Code Ocean deployment repository
+## Canonical OMIX module
 
-This public repository is the **Code Ocean deployment repository** for OMIX DEG
-Analysis. It contains the Code Ocean-ready entry point, app-panel definition,
-runtime adapter, and tests needed to run the analysis as a capsule.
+| Item | Location |
+| --- | --- |
+| Canonical module | [OMIX DEG Analysis](https://github.com/NIDAP-Community/OMIX/tree/main/modules/OMIX-DEG-Analysis) |
+| Interface contract | [schemas/interface.yml](https://github.com/NIDAP-Community/OMIX/blob/main/modules/OMIX-DEG-Analysis/schemas/interface.yml) |
+| Development contract | [OMIX module contract](https://github.com/NIDAP-Community/OMIX/blob/main/docs/module-contract.md) |
+| Released source reference | [OMIX_MODULE_SOURCE.md](OMIX_MODULE_SOURCE.md) |
 
-For portable local R use and the canonical scientific implementation, start
-with the [OMIX monorepo](https://github.com/NIDAP-Community/OMIX). The two
-repositories intentionally serve different roles: OMIX is platform-neutral;
-this repository packages that analysis for Code Ocean.
+The canonical module owns the portable scientific implementation, CLI, tests,
+and reusable input/output contract. This public repository is its deployment
+adapter.
+
+## What this deployment adds
+
+- The Code Ocean entry point and App Panel.
+- Attached-data and upload discovery for count tables, metadata, and MOO files.
+- Capsule result layout and runtime configuration.
 
 OMIX DEG Analysis identifies genes whose expression differs between biological
 groups from bulk RNA-seq count data. It performs low-expression filtering,
@@ -180,6 +188,11 @@ handled through the donor-aware model path.
   [doi:10.1186/gb-2014-15-2-r29](https://doi.org/10.1186/gb-2014-15-2-r29)
 
 ## For developers
+
+Read [AGENTS.md](AGENTS.md) and [OMIX_MODULE_SOURCE.md](OMIX_MODULE_SOURCE.md)
+before editing. Deployment fixes that affect scientific behavior, defaults, or
+the reusable input/output interface must be backported to the canonical OMIX
+module before release.
 
 This repository is the deployment adapter for the portable OMIX module. The
 canonical scientific implementation is maintained in the

@@ -1,13 +1,9 @@
-# OMIX DEG Analysis Review Instructions
+# OMIX DEG Analysis Deployment Adapter Instructions
 
-This repository is in review before a canonical OMIX module or Code Ocean
-capsule interface is created.
+Read [AGENTS.md](../AGENTS.md), [OMIX_MODULE_SOURCE.md](../OMIX_MODULE_SOURCE.md),
+and `README.md` before editing. The canonical OMIX module owns scientific
+behavior; this repository owns only deployment UI, input/output handling, and
+the runtime entry point.
 
-- Preserve `code/functions/DEG_Paired_v53.R` as the identified template
-  baseline unless a reviewed scientific change is explicitly requested.
-- Do not create App Panel metadata, a runtime Dockerfile, or a `code/main.R`
-  wrapper until the input, output, replicate, and runtime decisions in
-  `docs/review.md` are resolved.
-- Keep data, results, credentials, and package inventories out of Git.
-- Once approved, create the platform-neutral OMIX module first and make this
-  repository its Code Ocean deployment adapter.
+Do not commit data, results, credentials, package caches, or package-inventory
+archives. Validate adapter changes with representative deployment inputs.
