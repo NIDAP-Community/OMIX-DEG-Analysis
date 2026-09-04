@@ -6,7 +6,7 @@
 - **Canonical path:** `modules/OMIX-DEG-Analysis/`
 - **Canonical module version:** `0.1.3`
 - **Canonical interface version:** `1`
-- **Canonical release tag:** Pending — baseline tag not yet established.
+- **Canonical release tag:** [`module/omix-deg-analysis/v0.1.3`](https://github.com/NIDAP-Community/OMIX/tree/module/omix-deg-analysis/v0.1.3)
 - **Canonical source reference:** [`2987296a45a2a11e6c4b3454c813a63ae6db6ac0`](https://github.com/NIDAP-Community/OMIX/commit/2987296a45a2a11e6c4b3454c813a63ae6db6ac0)
 - **Interface schema:** [schemas/interface.yml](https://github.com/NIDAP-Community/OMIX/blob/main/modules/OMIX-DEG-Analysis/schemas/interface.yml)
 - **Module contract:** [OMIX module contract](https://github.com/NIDAP-Community/OMIX/blob/main/docs/module-contract.md)
@@ -24,9 +24,9 @@ reference above.
 
 | Field | Recorded value |
 | --- | --- |
-| Adapter version | Pending — baseline tag not yet established. |
-| Adapter release tag | Pending. |
-| Platform release | Pending validation record. |
+| Adapter version | `0.1.3` |
+| Adapter release tag | [`v0.1.3`](https://github.com/NIDAP-Community/OMIX-DEG-Analysis/tree/v0.1.3) |
+| Platform release | Successful Code Ocean validation run on 2026-09-04; a published release ID was not recorded. |
 | Runtime identity | Not yet recorded as an immutable image digest or lockfile reference. |
 
 See the [OMIX versioning and release policy](https://github.com/NIDAP-Community/OMIX/blob/main/docs/versioning-and-releases.md). The source commit, adapter tag, platform release, and runtime identity are separate records.
