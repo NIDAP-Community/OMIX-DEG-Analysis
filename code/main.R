@@ -20,31 +20,12 @@ as_logical <- function(value, argument) {
   stop("--", argument, " must be true or false.")
 }
 
-option_list <- list(
-  make_option("--input_type", type = "character", default = "auto"),
-  make_option("--counts_file", type = "character", default = ""),
-  make_option("--metadata_file", type = "character", default = ""),
-  make_option("--moo_file", type = "character", default = ""),
-  make_option("--gene_names_column", type = "character", default = "GeneName"),
-  make_option("--sample_names_column", type = "character", default = "Sample"),
-  make_option("--samples_to_include", type = "character", default = ""),
-  make_option("--contrast_variable_columns", type = "character", default = "Group"),
-  make_option("--contrasts", type = "character", default = "B-A"),
-  make_option("--covariate_columns", type = "character", default = ""),
-  make_option("--batch_effect_columns", type = "character", default = "Batch"),
-  make_option("--donor_variable_column", type = "character", default = ""),
-  make_option("--filter_low_expression", type = "character", default = "true"),
-  make_option("--return_batch_corrected_values", type = "character", default = "true"),
-  make_option("--remove_donor_effect_for_downstream", type = "character", default = "true"),
-  make_option("--normalization_method", type = "character", default = "TMM"),
-  make_option("--write_normalization_diagnostics", type = "character", default = "true"),
-  make_option("--summarization_method", type = "character", default = "sum"),
-  make_option("--output_dir", type = "character", default = "")
-)
-
-opt <- parse_args(OptionParser(option_list = option_list))
-code_dir <- script_path()
-source(file.path(code_dir, "functions", "OMIX_DEG_Analysis.R"))
+as_auto_logical <- function(value, argument) {
+  if (is.null(value) || !nzchar(trimws(value)) || identical(tolower(trimws(value)), "auto")) {
+    return(NULL)
+  }
+  as_logical(value, argument)
+}
 
 read_tabular_input <- function(path) {
   extension <- tolower(tools::file_ext(path))
@@ -52,7 +33,7 @@ read_tabular_input <- function(path) {
     object <- readRDS(path)
     if (is.matrix(object)) return(as.data.frame(object, check.names = FALSE))
     if (is.data.frame(object)) return(object)
-    stop("RDS input must contain a data frame or matrix: ", path)
+    stop("RDS table input must contain a data frame or matrix: ", path)
   }
   if (extension == "csv") {
     return(utils::read.csv(path, check.names = FALSE, stringsAsFactors = FALSE))
@@ -60,96 +41,108 @@ read_tabular_input <- function(path) {
   if (extension %in% c("tsv", "txt")) {
     return(utils::read.delim(path, check.names = FALSE, stringsAsFactors = FALSE))
   }
-  stop("Unsupported input extension for ", path, ". Use CSV, TSV, TXT, or RDS.")
+  stop("Unsupported table input extension for ", path, ". Use CSV, TSV, TXT, or RDS.")
 }
 
-canonical_data_path <- function(path) {
-  # Code Ocean can expose the same mounted data directory as both /data and
-  # //data. Collapse repeated leading slashes so one physical file is not
-  # treated as two discovered inputs.
-  path <- normalizePath(path, mustWork = TRUE, winslash = "/")
-  sub("^/{2,}", "/", path)
-}
+option_list <- list(
+  make_option("--input_type", type = "character", default = "auto", help = "auto, table, or moo [default: %default]"),
+  make_option("--analysis_mode", type = "character", default = "raw_counts", help = "raw_counts, harmony_mean_expression, or sct_mean_expression [default: %default]"),
+  make_option("--counts_file", type = "character", default = "", help = "Optional explicit matrix table; otherwise discover from attached data"),
+  make_option("--metadata_file", type = "character", default = "", help = "Optional explicit sample-metadata table"),
+  make_option("--moo_file", type = "character", default = "", help = "Optional compatible MOO .rds; raw_counts only"),
+  make_option("--pseudobulk_manifest", type = "character", default = "", help = "Optional explicit Pseudobulk_Manifest.dcf; otherwise discover exactly one"),
+  make_option("--gene_names_column", type = "character", default = "GeneName", help = "Matrix feature-ID column [default: %default]"),
+  make_option("--sample_names_column", type = "character", default = "Sample", help = "Metadata sample-ID column [default: %default]"),
+  make_option("--samples_to_include", type = "character", default = "", help = "Optional comma-separated sample IDs"),
+  make_option("--contrast_variable_columns", type = "character", default = "Group", help = "One or two comma-separated biological group columns [default: %default]"),
+  make_option("--contrasts", type = "character", default = "B-A", help = "Comma-separated numerator-denominator contrasts [default: %default]"),
+  make_option("--covariate_columns", type = "character", default = "", help = "Optional comma-separated fixed covariates"),
+  make_option("--batch_effect_columns", type = "character", default = "auto", help = "auto, blank, or comma-separated technical batch columns [default: %default]"),
+  make_option("--donor_variable_column", type = "character", default = "", help = "Optional donor/patient column for repeated measures"),
+  make_option("--filter_low_expression", type = "character", default = "auto", help = "auto, true, or false [default: %default]"),
+  make_option("--return_batch_corrected_values", type = "character", default = "auto", help = "auto, true, or false [default: %default]"),
+  make_option("--remove_donor_effect_for_downstream", type = "character", default = "auto", help = "auto, true, or false [default: %default]"),
+  make_option("--normalization_method", type = "character", default = "auto", help = "Mode-aware normalization profile [default: %default]"),
+  make_option("--write_normalization_diagnostics", type = "character", default = "auto", help = "auto, true, or false [default: %default]"),
+  make_option("--summarization_method", type = "character", default = "auto", help = "auto, sum, mean, or max [default: %default]"),
+  make_option("--output_dir", type = "character", default = "", help = "Output directory; defaults to /results in Code Ocean")
+)
 
-find_tabular_candidates <- function(filename_pattern) {
-  search_roots <- c("/data", file.path(dirname(code_dir), "data"))
-  files <- unique(unlist(lapply(search_roots[dir.exists(search_roots)], function(root) {
-    list.files(root, pattern = "[.](csv|tsv|txt|rds)$", full.names = TRUE, recursive = TRUE, ignore.case = TRUE)
-  })))
-  files <- unique(vapply(files, canonical_data_path, character(1)))
-  files[grepl(filename_pattern, basename(files), ignore.case = TRUE)]
-}
-
-resolve_input <- function(upload_path, filename_pattern, label) {
-  if (nzchar(upload_path)) {
-    if (!file.exists(upload_path)) stop(label, " upload does not exist: ", upload_path)
-    return(canonical_data_path(upload_path))
-  }
-  candidates <- find_tabular_candidates(filename_pattern)
-  if (length(candidates) == 1L) return(candidates)
-  if (length(candidates) == 0L) {
-    stop("No ", label, " file was uploaded or uniquely discovered. Upload it explicitly or attach one file named with '", filename_pattern, "'.")
-  }
-  stop("Multiple ", label, " candidates found. Upload the intended file explicitly: ", paste(candidates, collapse = ", "))
-}
-
-find_moo_input <- function(upload_path) {
-  if (nzchar(upload_path)) {
-    if (!file.exists(upload_path)) stop("MOO upload does not exist: ", upload_path)
-    if (tolower(tools::file_ext(upload_path)) != "rds") {
-      stop("MOO input must be an .rds file: ", upload_path)
-    }
-    return(normalizePath(upload_path, mustWork = TRUE))
-  }
-  search_roots <- c("/data", file.path(dirname(code_dir), "data"))
-  candidates <- unique(unlist(lapply(search_roots[dir.exists(search_roots)], function(root) {
-    list.files(root, pattern = "[.]rds$", full.names = TRUE, recursive = TRUE, ignore.case = TRUE)
-  })))
-  if (length(candidates) == 1L) return(candidates)
-  if (length(candidates) == 0L) {
-    stop("No MOO .rds file was uploaded or uniquely discovered. Upload it explicitly.")
-  }
-  stop("Multiple .rds files were found. Upload the intended MOO explicitly: ", paste(candidates, collapse = ", "))
-}
+opt <- parse_args(OptionParser(option_list = option_list))
+code_dir <- script_path()
+source(file.path(code_dir, "functions", "OMIX_DEG_Analysis.R"))
+source(file.path(code_dir, "functions", "DEG_Adapter.R"))
 
 input_type <- tolower(trimws(opt$input_type))
 if (!input_type %in% c("auto", "table", "moo")) {
   stop("--input_type must be one of: auto, table, moo.")
 }
-if (nzchar(opt$moo_file) && (nzchar(opt$counts_file) || nzchar(opt$metadata_file))) {
-  stop("Use either --moo_file or --counts_file/--metadata_file, not both.")
+analysis_mode <- tolower(trimws(opt$analysis_mode))
+if (!analysis_mode %in% c("raw_counts", "harmony_mean_expression", "sct_mean_expression")) {
+  stop("--analysis_mode must be raw_counts, harmony_mean_expression, or sct_mean_expression.")
+}
+if (nzchar(opt$moo_file) && (nzchar(opt$counts_file) || nzchar(opt$metadata_file) || nzchar(opt$pseudobulk_manifest))) {
+  stop("Use either --moo_file or table/manifest inputs, not both.")
 }
 
-has_explicit_table_input <- nzchar(opt$counts_file) || nzchar(opt$metadata_file)
+has_explicit_table_input <- nzchar(opt$counts_file) || nzchar(opt$metadata_file) || nzchar(opt$pseudobulk_manifest)
 use_moo <- identical(input_type, "moo") || nzchar(opt$moo_file)
 if (identical(input_type, "auto") && !use_moo && !has_explicit_table_input) {
-  count_candidates <- find_tabular_candidates("count")
-  metadata_candidates <- find_tabular_candidates("metadata|sample")
-  use_moo <- length(count_candidates) == 0L && length(metadata_candidates) == 0L
+  manifest_candidates <- omix_deg_find_files(code_dir, "dcf")
+  manifest_candidates <- manifest_candidates[
+    tolower(basename(manifest_candidates)) == "pseudobulk_manifest.dcf"
+  ]
+  matrix_candidates <- omix_deg_matrix_candidates(code_dir, analysis_mode)
+  metadata_candidates <- omix_deg_metadata_candidates(code_dir)
+  use_moo <- length(manifest_candidates) == 0L &&
+    length(matrix_candidates) == 0L &&
+    length(metadata_candidates) == 0L
 }
 
 if (use_moo) {
+  if (!identical(analysis_mode, "raw_counts")) {
+    stop("MOO input only supports --analysis_mode raw_counts.")
+  }
   if (!requireNamespace("OmixMOSuite", quietly = TRUE)) {
     stop(
-      "MOO input requires the optional OmixMOSuite bridge and MOSuite runtime. ",
-      "Use table input or install the supported bridge before running this mode."
+      "MOO input requires the optional OmixMOSuite bridge and its supported object runtime. ",
+      "Use table input or install the bridge before running this mode."
     )
   }
-  moo_path <- find_moo_input(opt$moo_file)
+  moo_path <- omix_deg_find_moo(opt$moo_file, code_dir)
   omix_input <- OmixMOSuite::omix_read_mosuite_rds(moo_path, count_type = "raw")
   counts <- omix_input$counts
   metadata <- omix_input$metadata
-  counts_path <- paste0("MOO raw count layer: ", moo_path)
-  metadata_path <- paste0("MOO embedded sample metadata: ", moo_path)
   opt$gene_names_column <- omix_input$feature_id_column
   opt$sample_names_column <- omix_input$sample_id_column
+  input_summary <- c(
+    "input type: MOO",
+    paste("MOO file:", moo_path),
+    paste("MOO count layer:", omix_input$provenance$count_type),
+    "pseudobulk manifest: not supplied"
+  )
   message("MOO input: extracted raw counts and aligned sample metadata from ", moo_path)
 } else {
   if (identical(input_type, "moo")) stop("MOO input mode requires a MOO .rds file.")
-  counts_path <- resolve_input(opt$counts_file, "count", "counts")
-  metadata_path <- resolve_input(opt$metadata_file, "metadata|sample", "metadata")
-  counts <- read_tabular_input(counts_path)
-  metadata <- read_tabular_input(metadata_path)
+  resolved <- omix_deg_resolve_table_inputs(
+    matrix_upload = opt$counts_file,
+    metadata_upload = opt$metadata_file,
+    manifest_upload = opt$pseudobulk_manifest,
+    analysis_mode = analysis_mode,
+    code_dir = code_dir
+  )
+  counts <- read_tabular_input(resolved$matrix)
+  metadata <- read_tabular_input(resolved$metadata)
+  input_summary <- c(
+    "input type: table",
+    paste("matrix input:", resolved$matrix),
+    paste("metadata input:", resolved$metadata),
+    if (is.null(resolved$manifest)) {
+      "pseudobulk manifest: not supplied"
+    } else {
+      paste("pseudobulk manifest:", resolved$manifest$path)
+    }
+  )
 }
 
 selected_samples <- split_csv(opt$samples_to_include)
@@ -159,11 +152,27 @@ if (length(selected_samples) == 0L) {
   }
   selected_samples <- intersect(as.character(metadata[[opt$sample_names_column]]), colnames(counts))
 }
-if (length(selected_samples) == 0L) stop("No selected metadata sample IDs occur in the count table.")
+if (length(selected_samples) == 0L) stop("No selected metadata sample IDs occur in the expression matrix.")
 
 output_dir <- opt$output_dir
-if (!nzchar(output_dir)) output_dir <- if (dir.exists("/results")) "/results" else file.path(dirname(code_dir), "results")
+if (!nzchar(output_dir)) {
+  output_dir <- if (dir.exists("/results")) "/results" else file.path(dirname(code_dir), "results")
+}
 dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
+
+batch_effect_columns <- if (identical(tolower(trimws(opt$batch_effect_columns)), "auto")) {
+  if (identical(analysis_mode, "raw_counts")) "Batch" else character()
+} else {
+  split_csv(opt$batch_effect_columns)
+}
+normalization_diagnostics <- if (
+  identical(tolower(trimws(opt$write_normalization_diagnostics)), "auto") &&
+    identical(analysis_mode, "raw_counts")
+) {
+  TRUE
+} else {
+  as_auto_logical(opt$write_normalization_diagnostics, "write_normalization_diagnostics")
+}
 
 results <- omix_deg_analysis(
   Dataset = counts,
@@ -175,13 +184,20 @@ results <- omix_deg_analysis(
   contrasts = split_csv(opt$contrasts),
   covariate_columns = split_csv(opt$covariate_columns),
   donor_variable_column = split_csv(opt$donor_variable_column),
-  batch_effect_columns = split_csv(opt$batch_effect_columns),
-  filter_low_expression = as_logical(opt$filter_low_expression, "filter_low_expression"),
+  batch_effect_columns = batch_effect_columns,
+  analysis_mode = analysis_mode,
+  filter_low_expression = as_auto_logical(opt$filter_low_expression, "filter_low_expression"),
   normalization_method = opt$normalization_method,
-  normalization_diagnostics = as_logical(opt$write_normalization_diagnostics, "write_normalization_diagnostics"),
+  normalization_diagnostics = normalization_diagnostics,
   diagnostics_output_dir = output_dir,
-  return_batch_corrected_values = as_logical(opt$return_batch_corrected_values, "return_batch_corrected_values"),
-  remove_donor_effect_for_downstream = as_logical(opt$remove_donor_effect_for_downstream, "remove_donor_effect_for_downstream"),
+  return_batch_corrected_values = as_auto_logical(
+    opt$return_batch_corrected_values,
+    "return_batch_corrected_values"
+  ),
+  remove_donor_effect_for_downstream = as_auto_logical(
+    opt$remove_donor_effect_for_downstream,
+    "remove_donor_effect_for_downstream"
+  ),
   summarization_method = opt$summarization_method
 )
 
@@ -204,16 +220,24 @@ utils::write.csv(
 run_summary <- attr(results, "omix_deg_run")
 writeLines(c(
   "OMIX DEG Analysis run summary",
-  paste("counts input:", counts_path),
-  paste("metadata input:", metadata_path),
+  input_summary,
+  paste("analysis mode:", run_summary$analysis_mode),
+  paste("input matrix type:", run_summary$input_matrix_type),
   paste("model type:", run_summary$model_type),
-  paste("normalization profile:", opt$normalization_method),
+  paste("normalization profile:", run_summary$normalization_method),
   paste("library-size normalization:", run_summary$library_size_normalization),
   paste("voom-scale normalization:", run_summary$voom_scale_normalization),
-  paste("normalization diagnostics:", if (length(run_summary$normalization_diagnostic_files) == 0L) "not written" else paste(basename(run_summary$normalization_diagnostic_files), collapse = ", ")),
+  paste(
+    "normalization diagnostics:",
+    if (length(run_summary$normalization_diagnostic_files) == 0L) {
+      "not written"
+    } else {
+      paste(basename(run_summary$normalization_diagnostic_files), collapse = ", ")
+    }
+  ),
   paste("genes before filtering:", run_summary$genes_before_filtering),
   paste("genes modelled:", run_summary$genes_modelled),
   paste("expression output:", run_summary$expression_output),
   paste("adjusted columns:", paste(run_summary$adjusted_columns, collapse = ", "))
 ), file.path(output_dir, "run_summary.txt"))
-message("Wrote results to ", output_dir)
+message("Wrote results to ", normalizePath(output_dir, mustWork = TRUE))

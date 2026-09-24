@@ -32,8 +32,10 @@ make_fixture <- function() {
 }
 
 compare_statistics <- function(new_results, reference_results, label, tolerance = 1e-8) {
+  new_subset <- new_results[, c("GeneName", "B-A_logFC", "B-A_pval")]
+  colnames(new_subset)[1L] <- "Gene"
   shared <- merge(
-    new_results[, c("Gene", "B-A_logFC", "B-A_pval")],
+    new_subset,
     reference_results[, c("Gene", "B-A_logFC", "B-A_pval")],
     by = "Gene",
     suffixes = c("_new", "_reference")

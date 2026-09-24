@@ -20,25 +20,32 @@ adapter.
 - Capsule result layout and runtime configuration.
 
 OMIX DEG Analysis identifies genes whose expression differs between biological
-groups from bulk RNA-seq count data. It performs low-expression filtering,
-library-size normalization, limma-voom modelling, and optional adjustment for
-technical batch or genuine repeated measurements.
+groups using one of three explicit matrix contracts:
 
-Use raw or pre-filtered **integer-like counts**. Do not use normalized,
-log-transformed, TPM, FPKM, or CPM expression values as input.
+| Analysis mode | Valid matrix | Model |
+| --- | --- | --- |
+| `raw_counts` | Raw or pre-filtered integer-like bulk/summed-pseudobulk counts | Design-aware filtering, edgeR normalization, and limma-voom |
+| `harmony_mean_expression` | Declared log2-scale Harmony-corrected cell-type × donor means | Direct limma; no TMM, voom, or second batch correction |
+| `sct_mean_expression` | Log2-scale SCT donor means written from Seurat `SCT/data` | Direct limma; no TMM or voom |
+
+The mode is part of the scientific input contract. Do not analyze normalized
+or log-transformed expression as `raw_counts`, and do not send raw counts to a
+continuous-expression mode.
 
 ## Quick start
 
-1. Provide a count table and its matching sample-metadata table, or one
-   compatible MOSuite MOO object.
-2. Set **Biological Group Column(s)** to the metadata column defining the
+1. Select **Analysis Mode** to match the matrix.
+2. Attach one complete pseudobulk result bundle, provide a matrix and matching
+   metadata table, or use a compatible raw-count MOO object.
+3. Set **Biological Group Column(s)** to the metadata column defining the
    groups to compare, for example `Group`.
-3. Set **Contrasts** as `test-reference`; for example, `B-A` compares group B
+4. Set **Contrasts** as `test-reference`; for example, `B-A` compares group B
    with group A.
-4. Enter a **Technical Batch Column** only when one exists. Leave it blank
-   otherwise.
-5. Run the analysis and review `DEG_Analysis.csv` together with the diagnostic
-   plots and run summary.
+5. Keep processing controls on **Auto** unless the selected mode and study
+   design justify an explicit override.
+6. Run the analysis and review `DEG_Analysis.csv`, `Sample_Metadata.csv`, and
+   `run_summary.txt`. Raw-count mode also writes normalization diagnostics by
+   default.
 
 Each group in a contrast needs at least two samples. For paired or repeated
 measurements, enter the column that identifies the biological donor or patient;
@@ -48,11 +55,25 @@ do not use a technical batch as a donor identifier.
 
 Choose one of the following approaches.
 
+### Pseudobulk bundle: automatic discovery
+
+Attach one result or Data Asset containing:
+
+- `Pseudobulk_Manifest.dcf`;
+- `Pseudobulk_Sample_Metadata.csv`; and
+- exactly one of `Pseudobulk_Counts.csv`, `Harmony_Mean_Expression.csv`, or
+  `SCT_Mean_Log2_Expression.csv`.
+
+Choose the matching **Analysis Mode** and leave all three file selectors blank.
+The adapter finds exactly one manifest recursively, validates its `matrix_type`,
+and resolves the matrix and metadata from that manifest's folder. If several
+manifests are attached, select **Pseudobulk Manifest** under Advanced.
+
 ### Table mode: one combined Data Asset
 
-Attach one Data Asset that contains exactly one count table and one matching
-sample-metadata table. Leave **Raw Counts File** and **Sample Metadata File**
-blank. OMIX discovers the pair automatically.
+Attach one Data Asset that contains exactly one mode-appropriate matrix and one
+matching sample-metadata table. Leave **Matrix File** and **Sample Metadata
+File** blank. OMIX discovers the pair automatically from mode-specific names.
 
 The DEG-compatible MOSuite low-count-filter output uses this form:
 
@@ -61,35 +82,39 @@ The DEG-compatible MOSuite low-count-filter output uses this form:
 
 ### Table mode: two separately selected files
 
-Use the **Raw Counts File** and **Sample Metadata File** selectors to provide
+Use the **Matrix File** and **Sample Metadata File** selectors to provide
 both files explicitly. Explicit selections take precedence over automatic
-discovery and are useful when the attached data contains more than one possible
-table.
+discovery and are useful when attached data contains more than one possible
+table. Two explicit tables are authoritative; attach the manifest explicitly
+when its matrix-type validation is also required.
 
 ### MOO mode
 
-Provide one compatible MOSuite `.rds` multiOmicDataSet object. OMIX extracts
-the raw-count layer and sample metadata automatically. This option requires the
-MOSuite bridge to be available in the runtime; ordinary table input does not.
+Provide one compatible `.rds` multiOmicDataSet object. OMIX extracts the
+raw-count layer and sample metadata automatically. This is valid only with
+`raw_counts` and requires the lightweight supported object bridge in the
+runtime; ordinary table input does not.
 
 ### Single-cell pseudobulk input
 
-For single-cell data, first aggregate raw counts by biological donor and
-condition into a pseudobulk count table and matching metadata table. The
-[OmixSeurat bridge](https://github.com/NIDAP-Community/OMIX/tree/main/bridges/seurat)
-can prepare these portable tables from a Seurat object before the capsule is
-run. Do not use individual cells as independent replicates in this bulk-style
-model.
+For single-cell data, first aggregate separately for each selected cell type,
+biological donor, and condition with
+[OMIX Seurat Pseudobulk](https://github.com/NIDAP-Community/OMIX/tree/main/modules/OMIX-Seurat-Pseudobulk).
+Its complete output bundle can be attached directly. Do not use individual
+cells as independent replicates.
 
 ## Required table structure
 
-Count and metadata tables may be CSV, TSV, TXT, or tabular RDS files.
+Matrix and metadata tables may be CSV, TSV, TXT, or tabular RDS files.
 
-### Count table
+### Matrix table
 
 - The first column contains feature identifiers; the default name is
   `GeneName`.
-- Each remaining column contains raw or pre-filtered counts for one sample.
+- Each remaining column represents one donor/sample. Values must be
+  integer-like counts for `raw_counts`, declared log2 Harmony-corrected means
+  for `harmony_mean_expression`, or log2 SCT donor means for
+  `sct_mean_expression`.
 - Column names must match the sample IDs in the metadata table.
 
 ### Sample metadata table
@@ -120,14 +145,30 @@ expression in B than in A.
 
 - **Additional Fixed Covariates**: metadata columns to include in the model,
   such as sex or a prespecified clinical variable.
-- **Technical Batch Column(s)**: technical source of variation to adjust for,
-  such as sequencing run or library-preparation batch.
+- **Technical Batch Column(s)**: use `Auto` to model `Batch` for raw counts and
+  omit this term for continuous-expression modes. Harmony input forbids a
+  second batch correction. For SCT means, put an unhandled technical batch in
+  **Additional Fixed Covariates** instead.
 - **Donor / Patient Column**: biological subject identifier for paired or
   repeated-measures samples. This is not a substitute for a technical batch.
 
-## Choose normalization
+## Mode-aware processing defaults
 
-The default method, **TMM**, is suitable for most bulk RNA-seq studies. It
+The App Panel defaults processing controls to `Auto`. This preserves the
+historical raw-count defaults while preventing count-only operations from being
+applied to continuous expression.
+
+| Control | `raw_counts` | Harmony/SCT donor means |
+| --- | --- | --- |
+| Low-expression filtering | Enabled | Disabled |
+| Normalization | TMM | None |
+| Normalization diagnostics | Written | Not applicable |
+| Duplicate feature IDs | Sum | Mean |
+| Adjusted expression block | Batch/donor-adjusted when requested | Supplied expression returned unchanged |
+
+### Raw-count normalization
+
+The mode-aware default method, **TMM**, is suitable for most bulk RNA-seq studies. It
 adjusts for library-size and compositional differences before limma-voom
 modelling.
 
@@ -150,15 +191,17 @@ The analysis writes the following primary results.
   contrast, with sample-level expression values used for downstream plotting.
 - `Sample_Metadata.csv`: metadata for exactly the samples whose expression is
   included in `DEG_Analysis.csv`, in matching order.
-- Run summary: model settings, input checks, and analysis provenance.
-- Diagnostics: `normalization_boxplots.png`, `normalization_densities.png`,
-  and `voom_mean_variance.png`. They are written by default and can be disabled
-  with the normalization-diagnostics setting.
+- `run_summary.txt`: resolved input paths, manifest use, analysis mode, matrix
+  type, model, normalization, and output provenance.
+- Raw-count diagnostics: `normalization_boxplots.png`,
+  `normalization_densities.png`, and `voom_mean_variance.png`. They are written
+  by default and can be disabled. They are not produced for Harmony/SCT modes.
 
-When batch or donor adjustment is included, the expression columns appended to
-the right side of the exported table are adjusted voom-scale log-CPM values for
-downstream visualization. They are not replacements for the statistical
-results, which come from the complete fitted design.
+For raw counts, when batch or donor adjustment is included, the expression
+columns appended to the right side of the exported table are adjusted
+voom-scale log-CPM values for downstream visualization. Continuous-expression
+modes append their supplied donor means unchanged. Neither expression block
+replaces the statistical results from the fitted design.
 
 `DEG_Analysis.csv` and `Sample_Metadata.csv` are one downstream data bundle.
 Keep both files together when attaching the result to another analysis or
@@ -168,17 +211,22 @@ visualization step.
 
 | Message or symptom | What to check |
 | --- | --- |
-| Multiple counts or metadata candidates found | Attach one combined Data Asset with exactly one pair, remove unrelated tables, or select both files explicitly. |
+| Manifest `matrix_type` does not match Analysis Mode | Choose the mode declared by the bundle; do not override the manifest semantics. |
+| Multiple manifests found | Attach one pseudobulk result or select **Pseudobulk Manifest** explicitly. |
+| Multiple matrix or metadata candidates found | Attach one combined Data Asset with exactly one pair, remove unrelated tables, or select both files explicitly. |
 | `GeneName` or `Sample` is missing | Set the corresponding parameter to the exact column name in your files. |
-| `Batch` is missing | Leave the Technical Batch setting blank, or choose the correct metadata column. |
+| `Batch` is missing | For raw counts, clear or replace the Auto batch setting. Continuous modes resolve Auto to no Technical Batch term. |
+| A count-only option is rejected | Restore that option to Auto; Harmony/SCT modes do not use TMM, voom, edgeR filtering, or downstream batch removal. |
 | Samples do not match | Count-table column names and metadata sample IDs must match exactly. |
 | A group has fewer than two samples | Add biological replicates or revise the requested contrast. |
 
 ## Methods
 
-OMIX uses design-aware filtering and edgeR's TMM normalization before
-limma-voom modelling with empirical-Bayes moderation. Repeated measures are
-handled through the donor-aware model path.
+In `raw_counts`, OMIX uses design-aware filtering and edgeR's TMM normalization
+before limma-voom modelling with empirical-Bayes moderation. In the two
+continuous-expression modes it fits limma directly to declared donor means and
+does not repeat count normalization. Repeated measures use the donor-aware
+`duplicateCorrelation` path.
 
 - Robinson MD, Oshlack A. A scaling normalization method for differential
   expression analysis of RNA-seq data. *Genome Biology* 2010;11:R25.
