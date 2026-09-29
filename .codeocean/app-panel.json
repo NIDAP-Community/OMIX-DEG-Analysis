@@ -3,60 +3,44 @@
 	"named_parameters": true,
 	"general": {
 		"title": "OMIX DEG Analysis",
-		"instructions": "Run differential expression from raw integer-like counts and sample metadata. Choose Table for one counts table plus one metadata table (CSV, TSV, or RDS), or MOO for one MOSuite multiOmicDataSet (.rds). Auto detects a table only when it finds one unambiguous counts/metadata pair; otherwise it accepts exactly one .rds and validates that it is a MOO.\n\nThe default column names match the included training example: GeneName, Sample, Group, and Batch. Replace them with exact column names from your data. In MOO mode, the feature and sample-ID columns are extracted from the object.\n\nFor paired or repeated-measures data, set Donor / Patient Column. Do not use technical batch as a donor. The analysis performs design-aware filtering, TMM normalization, and limma-voom modeling."
+		"instructions": "Choose the analysis mode that matches the matrix: raw integer counts, Harmony-corrected donor means, or SCTransform donor means. Raw counts use edgeR/limma-voom. The two declared continuous-expression modes use direct limma without count normalization or voom. Do not interchange these inputs.\n\nFor a combined pseudobulk result, attach the folder containing its matrix, Pseudobulk_Sample_Metadata.csv, and Pseudobulk_Manifest.dcf; leave the file selectors blank. The adapter discovers the bundle and validates its matrix type against Analysis Mode. Advanced users can select the manifest explicitly. Ordinary tables and raw-count MOO input remain supported.\n\nThe default column names are GeneName, Sample, Group, and Batch. For paired or repeated measurements, set Donor / Patient Column. Do not use technical batch as a donor. Mode-aware Auto settings preserve the raw-count defaults and disable count-only processing for continuous-expression modes."
 	},
 	"datasets": [
 		{
 			"id": "6478f7be-ec52-4eb8-b360-6d1766bebea1",
-			"name": "DEG input data (counts + metadata)",
-			"description": "One input asset containing Filtered_Counts.csv and Sample_Metadata.csv for DEG analysis.",
-			"help_text": "Provide input using one of these options:\n\n**Table mode — one Data Asset:** Attach one Data Asset containing one unambiguous count table and one matching sample metadata table. Leave **Raw Counts File** and **Sample Metadata File** blank; OMIX detects the pair automatically.\n\n**Table mode — two separate files:** Upload or select both **Raw Counts File** and **Sample Metadata File**.\n\n**MOO mode:** Provide one compatible MOSuite `.rds` object; OMIX extracts its counts and sample metadata automatically.\n\nCount tables must contain raw or pre-filtered, integer-like counts—not normalized or log-transformed expression values. By default, the count table uses `GeneName` as its feature-ID column and the metadata table uses `Sample` as its sample-ID column. Metadata should also include `Group` and, when applicable, `Batch`."
+			"name": "DEG input data (matrix + metadata)",
+			"description": "Attach one raw-count table and metadata pair, one complete pseudobulk result bundle, or one compatible MOO. A pseudobulk bundle contains Pseudobulk_Manifest.dcf, Pseudobulk_Sample_Metadata.csv, and exactly one mode-specific matrix. Leave file selectors blank for automatic bundle discovery. Raw-count tables must be integer-like; Harmony and SCT donor means must use their matching Analysis Mode."
 		}
 	],
 	"categories": [
 		{
 			"id": "input",
 			"name": "📁 Input Data",
-			"help_text": "Provide either raw counts plus sample metadata, or one MOSuite MOO (.rds)."
+			"description": "Provide a matrix plus metadata, a complete pseudobulk bundle, or one raw-count MOSuite MOO (.rds)."
 		},
 		{
 			"id": "design",
 			"name": "🧪 Experimental Design",
-			"help_text": "Define biological comparisons and any sample-level adjustment variables."
+			"description": "Define biological comparisons and any sample-level adjustment variables."
 		},
 		{
 			"id": "processing",
 			"name": "⚙️ Processing and Output",
-			"help_text": "Configure filtering and the downstream expression block."
+			"description": "Mode-aware Auto settings use raw-count processing only when Analysis Mode is raw_counts."
 		},
 		{
 			"id": "advanced",
 			"name": "🔬 Advanced",
-			"help_text": "Use only when the standard defaults are unsuitable."
+			"description": "Use explicit files or processing choices only when automatic discovery and mode-aware defaults are unsuitable."
 		}
 	],
 	"parameters": [
 		{
-			"id": "input_type",
-			"category": "input",
-			"name": "Input Type",
-			"param_name": "input_type",
-			"help_text": "Auto uses an unambiguous counts/metadata pair when present; otherwise it accepts exactly one .rds and validates it as a MOSuite MOO. Choose Table or MOO explicitly when an asset includes multiple possible inputs.",
-			"type": "list",
-			"value_type": "string",
-			"default_value": "auto",
-			"extra_data": [
-				"auto",
-				"table",
-				"moo"
-			]
-		},
-		{
 			"id": "counts_file_upload",
 			"category": "input",
-			"name": "Raw Counts File",
-			"param_name": "counts_file",
-			"help_text": "Upload a CSV, TSV, or RDS count table. If left blank, the adapter looks for exactly one attached file whose name contains 'count'.",
+			"name": "Matrix File (Optional)",
+			"param_name": "counts",
+			"description": "Select a CSV, TSV, TXT, or RDS matrix. Leave blank to discover the mode-specific matrix from one attached pseudobulk bundle or unambiguous table asset.",
 			"type": "file",
 			"value_type": "string"
 		},
@@ -64,26 +48,65 @@
 			"id": "metadata_file_upload",
 			"category": "input",
 			"name": "Sample Metadata File",
-			"param_name": "metadata_file",
-			"help_text": "Upload a CSV, TSV, or RDS sample-metadata table. If left blank, the adapter looks for exactly one attached file whose name contains 'metadata' or 'sample'.",
+			"param_name": "metadata",
+			"description": "Select a CSV, TSV, TXT, or RDS sample-metadata table. Leave blank to discover Pseudobulk_Sample_Metadata.csv beside one manifest or another unambiguous metadata table.",
+			"type": "file",
+			"value_type": "string"
+		},
+		{
+			"id": "pseudobulk_manifest_upload",
+			"category": "advanced",
+			"name": "Pseudobulk Manifest (Optional)",
+			"param_name": "pseudobulk_manifest",
+			"description": "Advanced override for Pseudobulk_Manifest.dcf. Leave blank to discover exactly one attached manifest. The adapter validates matrix_type against Analysis Mode and discovers its paired matrix and metadata in the same folder.",
 			"type": "file",
 			"value_type": "string"
 		},
 		{
 			"id": "moo_file_upload",
 			"category": "input",
-			"name": "MOSuite MOO File (Optional)",
-			"param_name": "moo_file",
-			"help_text": "One .rds containing a MOSuite multiOmicDataSet. Select Input Type = moo, or leave Auto only when the asset contains no counts/metadata table pair. The adapter extracts the raw count layer and embedded sample metadata.",
+			"name": "MOO File (Optional; Raw Counts Only)",
+			"param_name": "moo",
+			"description": "One compatible multiOmicDataSet .rds. Use only with Analysis Mode = raw_counts. The adapter extracts its raw count layer and embedded sample metadata.",
 			"type": "file",
 			"value_type": "string"
+		},
+		{
+			"id": "input_type",
+			"category": "input",
+			"name": "Input Type",
+			"param_name": "input_type",
+			"description": "Choose table for an explicit or automatically discovered matrix-and-metadata pair or pseudobulk bundle. Choose moo for one compatible raw-count MOO object.",
+			"type": "list",
+			"value_type": "string",
+			"default_value": "table",
+			"extra_data": [
+				"table",
+				"moo"
+			]
+		},
+		{
+			"id": "analysis_mode",
+			"category": "input",
+			"name": "Analysis Mode",
+			"param_name": "analysis_mode",
+			"description": "Must match the matrix semantics. raw_counts runs edgeR normalization plus limma-voom. harmony_mean_expression and sct_mean_expression run direct limma on declared donor-level log2 expression.",
+			"type": "list",
+			"value_type": "string",
+			"default_value": "raw_counts",
+			"extra_data": [
+				"raw_counts",
+				"harmony_mean_expression",
+				"sct_mean_expression"
+			],
+			"required": true
 		},
 		{
 			"id": "gene_names_column",
 			"category": "input",
 			"name": "Feature ID Column",
 			"param_name": "gene_names_column",
-			"help_text": "Column in the count table containing feature or gene identifiers. Default matches the demo data.",
+			"description": "Column in the matrix containing feature or gene identifiers. Default matches OMIX pseudobulk and demo inputs.",
 			"type": "text",
 			"value_type": "string",
 			"default_value": "GeneName",
@@ -94,7 +117,7 @@
 			"category": "input",
 			"name": "Sample ID Column",
 			"param_name": "sample_names_column",
-			"help_text": "Metadata column whose values exactly match count-table sample columns.",
+			"description": "Metadata column whose values exactly match matrix sample columns.",
 			"type": "text",
 			"value_type": "string",
 			"default_value": "Sample",
@@ -105,7 +128,7 @@
 			"category": "input",
 			"name": "Samples to Include (Optional)",
 			"param_name": "samples_to_include",
-			"help_text": "Comma-separated sample IDs. Leave blank to use all metadata samples that occur in the count table.",
+			"description": "Comma-separated sample IDs. Leave blank to use all metadata samples that occur in the matrix.",
 			"type": "text",
 			"value_type": "string"
 		},
@@ -114,7 +137,7 @@
 			"category": "design",
 			"name": "Biological Group Column(s)",
 			"param_name": "contrast_variable_columns",
-			"help_text": "One metadata column, or two comma-separated columns for a two-factor design. Default matches the demo data.",
+			"description": "One metadata column, or two comma-separated columns for a two-factor design. Default matches the demo data.",
 			"type": "text",
 			"value_type": "string",
 			"default_value": "Group",
@@ -125,7 +148,7 @@
 			"category": "design",
 			"name": "Contrasts",
 			"param_name": "contrasts",
-			"help_text": "Comma-separated numerator-denominator comparisons, for example B-A or Treatment.Responder-Control.Responder.",
+			"description": "Comma-separated numerator-denominator comparisons, for example B-A or Treatment.Responder-Control.Responder.",
 			"type": "text",
 			"value_type": "string",
 			"default_value": "B-A",
@@ -136,7 +159,7 @@
 			"category": "design",
 			"name": "Additional Fixed Covariates (Optional)",
 			"param_name": "covariate_columns",
-			"help_text": "Comma-separated metadata columns to include as fixed effects. Do not repeat the donor column here.",
+			"description": "Comma-separated metadata columns to include as fixed effects. Do not repeat the donor column here. For SCT means, put an unhandled technical batch here rather than in Technical Batch Column(s).",
 			"type": "text",
 			"value_type": "string"
 		},
@@ -145,17 +168,17 @@
 			"category": "design",
 			"name": "Technical Batch Column(s) (Optional)",
 			"param_name": "batch_effect_columns",
-			"help_text": "Comma-separated technical batch columns. They are included in the DE model and removed from the downstream expression block. Clear this field when no batch variable is present.",
+			"description": "Auto uses Batch for raw_counts and no batch term for continuous-expression modes. Harmony means forbid a second batch correction. For SCT means, use Additional Fixed Covariates for an unhandled batch.",
 			"type": "text",
 			"value_type": "string",
-			"default_value": "Batch"
+			"default_value": "auto"
 		},
 		{
 			"id": "donor_variable_column",
 			"category": "design",
 			"name": "Donor / Patient Column (Optional)",
 			"param_name": "donor_variable_column",
-			"help_text": "Set for genuine repeated-measures designs. The model uses duplicateCorrelation and rejects unaggregated donor-by-group technical replicates.",
+			"description": "Set for genuine repeated-measures designs. The model uses duplicateCorrelation and rejects unaggregated donor-by-group technical replicates.",
 			"type": "text",
 			"value_type": "string"
 		},
@@ -164,53 +187,12 @@
 			"category": "processing",
 			"name": "Apply Design-Aware Low-Expression Filtering",
 			"param_name": "filter_low_expression",
-			"help_text": "Recommended. Uses edgeR::filterByExpr with the biological group design before TMM and voom.",
+			"description": "Auto enables design-aware edgeR filtering for raw_counts and disables it for Harmony/SCT donor means.",
 			"type": "list",
 			"value_type": "string",
-			"default_value": "true",
+			"default_value": "auto",
 			"extra_data": [
-				"true",
-				"false"
-			]
-		},
-		{
-			"id": "return_batch_corrected_values",
-			"category": "processing",
-			"name": "Append Adjusted Expression Columns",
-			"param_name": "return_batch_corrected_values",
-			"help_text": "Recommended. Appends batch-adjusted voom expression values at the right of DEG_Analysis.csv. This never changes DE statistics.",
-			"type": "list",
-			"value_type": "string",
-			"default_value": "true",
-			"extra_data": [
-				"true",
-				"false"
-			]
-		},
-		{
-			"id": "remove_donor_effect_for_downstream",
-			"category": "processing",
-			"name": "Remove Donor Effect from Downstream Expression",
-			"param_name": "remove_donor_effect_for_downstream",
-			"help_text": "Applies only when Donor / Patient Column is set. Retains biological group effects for downstream visualization.",
-			"type": "list",
-			"value_type": "string",
-			"default_value": "true",
-			"extra_data": [
-				"true",
-				"false"
-			]
-		},
-		{
-			"id": "write_normalization_diagnostics",
-			"category": "processing",
-			"name": "Write Normalization Diagnostics",
-			"param_name": "write_normalization_diagnostics",
-			"help_text": "Recommended. Writes before-and-after boxplots and density plots of filtered log-CPM values, plus the voom mean-variance trend used for precision weights. Use these QC plots to assess filtering and whether a stronger normalization profile is justified.",
-			"type": "list",
-			"value_type": "string",
-			"default_value": "true",
-			"extra_data": [
+				"auto",
 				"true",
 				"false"
 			]
@@ -220,11 +202,13 @@
 			"category": "advanced",
 			"name": "Normalization Method",
 			"param_name": "normalization_method",
-			"help_text": "Combined edgeR and voom normalization profile. Start with TMM (default). For substantial technical distributional noise, the next recommended option is Quantile; TMM + Quantile is the third, hybrid option. Review the diagnostics before choosing any stronger profile.",
+			"description": "Auto uses TMM for raw_counts and None for Harmony/SCT donor means. Other profiles are raw-count sensitivity options and should be chosen only after reviewing diagnostics.",
 			"type": "list",
 			"value_type": "string",
-			"default_value": "TMM",
+			"default_value": "auto",
 			"extra_data": [
+				"auto",
+				"None",
 				"TMM",
 				"Quantile",
 				"TMM + Quantile",
@@ -236,18 +220,64 @@
 			]
 		},
 		{
+			"id": "return_batch_corrected_values",
+			"category": "processing",
+			"name": "Append Adjusted Expression Columns",
+			"param_name": "return_batch_corrected_values",
+			"description": "Auto appends adjusted voom expression for raw_counts and returns continuous-expression inputs unchanged. This never changes DE statistics.",
+			"type": "list",
+			"value_type": "string",
+			"default_value": "auto",
+			"extra_data": [
+				"auto",
+				"true",
+				"false"
+			]
+		},
+		{
+			"id": "remove_donor_effect_for_downstream",
+			"category": "processing",
+			"name": "Remove Donor Effect from Downstream Expression",
+			"param_name": "remove_donor_effect_for_downstream",
+			"description": "Auto removes donor effects from the raw-count downstream expression block when a donor column is set. Continuous inputs are returned unchanged.",
+			"type": "list",
+			"value_type": "string",
+			"default_value": "auto",
+			"extra_data": [
+				"auto",
+				"true",
+				"false"
+			]
+		},
+		{
 			"id": "summarization_method",
 			"category": "advanced",
 			"name": "Duplicate Feature-ID Handling",
 			"param_name": "summarization_method",
-			"help_text": "How duplicate feature IDs are combined before modeling. Use sum for raw RNA-seq counts.",
+			"description": "Auto uses sum for raw counts and mean for continuous log2 expression. Explicit sum, mean, and max remain available.",
 			"type": "list",
 			"value_type": "string",
-			"default_value": "sum",
+			"default_value": "auto",
 			"extra_data": [
+				"auto",
 				"sum",
 				"mean",
 				"max"
+			]
+		},
+		{
+			"id": "write_normalization_diagnostics",
+			"category": "processing",
+			"name": "Write Normalization Diagnostics",
+			"param_name": "write_normalization_diagnostics",
+			"description": "Auto writes log-CPM and voom diagnostics for raw_counts only. Continuous-expression modes do not have count-normalization diagnostics.",
+			"type": "list",
+			"value_type": "string",
+			"default_value": "auto",
+			"extra_data": [
+				"auto",
+				"true",
+				"false"
 			]
 		}
 	],
