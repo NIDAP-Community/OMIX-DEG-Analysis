@@ -45,12 +45,12 @@ read_tabular_input <- function(path) {
 }
 
 option_list <- list(
-  make_option("--input_type", type = "character", default = "auto", help = "auto, table, or moo [default: %default]"),
-  make_option("--analysis_mode", type = "character", default = "raw_counts", help = "raw_counts, harmony_mean_expression, or sct_mean_expression [default: %default]"),
-  make_option("--counts_file", type = "character", default = "", help = "Optional explicit matrix table; otherwise discover from attached data"),
-  make_option("--metadata_file", type = "character", default = "", help = "Optional explicit sample-metadata table"),
-  make_option("--moo_file", type = "character", default = "", help = "Optional compatible MOO .rds; raw_counts only"),
+  make_option("--counts", type = "character", default = "", help = "Optional explicit matrix table; otherwise discover from attached data"),
+  make_option("--metadata", type = "character", default = "", help = "Optional explicit sample-metadata table"),
   make_option("--pseudobulk_manifest", type = "character", default = "", help = "Optional explicit Pseudobulk_Manifest.dcf; otherwise discover exactly one"),
+  make_option("--moo", type = "character", default = "", help = "Optional compatible MOO .rds; raw_counts only"),
+  make_option("--input_type", type = "character", default = "table", help = "table or moo [default: %default]"),
+  make_option("--analysis_mode", type = "character", default = "raw_counts", help = "raw_counts, harmony_mean_expression, or sct_mean_expression [default: %default]"),
   make_option("--gene_names_column", type = "character", default = "GeneName", help = "Matrix feature-ID column [default: %default]"),
   make_option("--sample_names_column", type = "character", default = "Sample", help = "Metadata sample-ID column [default: %default]"),
   make_option("--samples_to_include", type = "character", default = "", help = "Optional comma-separated sample IDs"),
@@ -71,33 +71,24 @@ option_list <- list(
 opt <- parse_args(OptionParser(option_list = option_list))
 code_dir <- script_path()
 source(file.path(code_dir, "functions", "OMIX_DEG_Analysis.R"))
-source(file.path(code_dir, "functions", "DEG_Adapter.R"))
+source(file.path(code_dir, "adapter", "DEG_Adapter.R"))
 
 input_type <- tolower(trimws(opt$input_type))
-if (!input_type %in% c("auto", "table", "moo")) {
-  stop("--input_type must be one of: auto, table, moo.")
+if (!input_type %in% c("table", "moo")) {
+  stop("--input_type must be one of: table, moo.")
 }
 analysis_mode <- tolower(trimws(opt$analysis_mode))
 if (!analysis_mode %in% c("raw_counts", "harmony_mean_expression", "sct_mean_expression")) {
   stop("--analysis_mode must be raw_counts, harmony_mean_expression, or sct_mean_expression.")
 }
-if (nzchar(opt$moo_file) && (nzchar(opt$counts_file) || nzchar(opt$metadata_file) || nzchar(opt$pseudobulk_manifest))) {
-  stop("Use either --moo_file or table/manifest inputs, not both.")
+if (nzchar(opt$moo) && (nzchar(opt$counts) || nzchar(opt$metadata) || nzchar(opt$pseudobulk_manifest))) {
+  stop("Use either --moo or table/manifest inputs, not both.")
+}
+if (identical(input_type, "moo") && (nzchar(opt$counts) || nzchar(opt$metadata) || nzchar(opt$pseudobulk_manifest))) {
+  stop("--counts, --metadata, and --pseudobulk_manifest are only valid with --input_type table.")
 }
 
-has_explicit_table_input <- nzchar(opt$counts_file) || nzchar(opt$metadata_file) || nzchar(opt$pseudobulk_manifest)
-use_moo <- identical(input_type, "moo") || nzchar(opt$moo_file)
-if (identical(input_type, "auto") && !use_moo && !has_explicit_table_input) {
-  manifest_candidates <- omix_deg_find_files(code_dir, "dcf")
-  manifest_candidates <- manifest_candidates[
-    tolower(basename(manifest_candidates)) == "pseudobulk_manifest.dcf"
-  ]
-  matrix_candidates <- omix_deg_matrix_candidates(code_dir, analysis_mode)
-  metadata_candidates <- omix_deg_metadata_candidates(code_dir)
-  use_moo <- length(manifest_candidates) == 0L &&
-    length(matrix_candidates) == 0L &&
-    length(metadata_candidates) == 0L
-}
+use_moo <- identical(input_type, "moo")
 
 if (use_moo) {
   if (!identical(analysis_mode, "raw_counts")) {
@@ -109,7 +100,7 @@ if (use_moo) {
       "Use table input or install the bridge before running this mode."
     )
   }
-  moo_path <- omix_deg_find_moo(opt$moo_file, code_dir)
+  moo_path <- omix_deg_find_moo(opt$moo, code_dir)
   omix_input <- OmixMOSuite::omix_read_mosuite_rds(moo_path, count_type = "raw")
   counts <- omix_input$counts
   metadata <- omix_input$metadata
@@ -123,10 +114,10 @@ if (use_moo) {
   )
   message("MOO input: extracted raw counts and aligned sample metadata from ", moo_path)
 } else {
-  if (identical(input_type, "moo")) stop("MOO input mode requires a MOO .rds file.")
+  if (nzchar(opt$moo)) stop("--moo is only valid with --input_type moo.")
   resolved <- omix_deg_resolve_table_inputs(
-    matrix_upload = opt$counts_file,
-    metadata_upload = opt$metadata_file,
+    matrix_upload = opt$counts,
+    metadata_upload = opt$metadata,
     manifest_upload = opt$pseudobulk_manifest,
     analysis_mode = analysis_mode,
     code_dir = code_dir

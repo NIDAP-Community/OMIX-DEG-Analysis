@@ -34,9 +34,11 @@ continuous-expression mode.
 
 ## Quick start
 
-1. Select **Analysis Mode** to match the matrix.
-2. Attach one complete pseudobulk result bundle, provide a matrix and matching
-   metadata table, or use a compatible raw-count MOO object.
+1. Keep **Input Type** at its default, `table`, for a pseudobulk bundle or a
+   matrix-and-metadata pair. Select `moo` only for a compatible raw-count MOO
+   object.
+2. Select **Analysis Mode** to match the matrix, then attach the corresponding
+   input.
 3. Set **Biological Group Column(s)** to the metadata column defining the
    groups to compare, for example `Group`.
 4. Set **Contrasts** as `test-reference`; for example, `B-A` compares group B
@@ -64,7 +66,8 @@ Attach one result or Data Asset containing:
 - exactly one of `Pseudobulk_Counts.csv`, `Harmony_Mean_Expression.csv`, or
   `SCT_Mean_Log2_Expression.csv`.
 
-Choose the matching **Analysis Mode** and leave all three file selectors blank.
+Choose `table` as **Input Type**, select the matching **Analysis Mode**, and
+leave all four file selectors blank.
 The adapter finds exactly one manifest recursively, validates its `matrix_type`,
 and resolves the matrix and metadata from that manifest's folder. If several
 manifests are attached, select **Pseudobulk Manifest** under Advanced.
@@ -72,8 +75,9 @@ manifests are attached, select **Pseudobulk Manifest** under Advanced.
 ### Table mode: one combined Data Asset
 
 Attach one Data Asset that contains exactly one mode-appropriate matrix and one
-matching sample-metadata table. Leave **Matrix File** and **Sample Metadata
-File** blank. OMIX discovers the pair automatically from mode-specific names.
+matching sample-metadata table. Keep **Input Type** at `table`; leave **Matrix
+File** and **Sample Metadata File** blank. OMIX discovers the pair automatically
+from mode-specific names.
 
 The DEG-compatible MOSuite low-count-filter output uses this form:
 
@@ -91,9 +95,9 @@ when its matrix-type validation is also required.
 ### MOO mode
 
 Provide one compatible `.rds` multiOmicDataSet object. OMIX extracts the
-raw-count layer and sample metadata automatically. This is valid only with
-`raw_counts` and requires the lightweight supported object bridge in the
-runtime; ordinary table input does not.
+raw-count layer and sample metadata automatically. Select `moo` as **Input
+Type** and `raw_counts` as **Analysis Mode**. This requires the lightweight
+supported object bridge in the runtime; ordinary table input does not.
 
 ### Single-cell pseudobulk input
 

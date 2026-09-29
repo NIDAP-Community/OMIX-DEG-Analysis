@@ -1,4 +1,4 @@
-source(file.path("code", "functions", "DEG_Adapter.R"))
+source(file.path("code", "adapter", "DEG_Adapter.R"))
 
 root <- tempfile("omix-deg-adapter-inputs-")
 dir.create(root, recursive = TRUE)

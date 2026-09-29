@@ -36,16 +36,51 @@
 	],
 	"parameters": [
 		{
+			"id": "counts_file_upload",
+			"category": "input",
+			"name": "Matrix File (Optional)",
+			"param_name": "counts",
+			"description": "Select a CSV, TSV, TXT, or RDS matrix. Leave blank to discover the mode-specific matrix from one attached pseudobulk bundle or unambiguous table asset.",
+			"type": "file",
+			"value_type": "string"
+		},
+		{
+			"id": "metadata_file_upload",
+			"category": "input",
+			"name": "Sample Metadata File",
+			"param_name": "metadata",
+			"description": "Select a CSV, TSV, TXT, or RDS sample-metadata table. Leave blank to discover Pseudobulk_Sample_Metadata.csv beside one manifest or another unambiguous metadata table.",
+			"type": "file",
+			"value_type": "string"
+		},
+		{
+			"id": "pseudobulk_manifest_upload",
+			"category": "advanced",
+			"name": "Pseudobulk Manifest (Optional)",
+			"param_name": "pseudobulk_manifest",
+			"description": "Advanced override for Pseudobulk_Manifest.dcf. Leave blank to discover exactly one attached manifest. The adapter validates matrix_type against Analysis Mode and discovers its paired matrix and metadata in the same folder.",
+			"type": "file",
+			"value_type": "string"
+		},
+		{
+			"id": "moo_file_upload",
+			"category": "input",
+			"name": "MOO File (Optional; Raw Counts Only)",
+			"param_name": "moo",
+			"description": "One compatible multiOmicDataSet .rds. Use only with Analysis Mode = raw_counts. The adapter extracts its raw count layer and embedded sample metadata.",
+			"type": "file",
+			"value_type": "string"
+		},
+		{
 			"id": "input_type",
 			"category": "input",
 			"name": "Input Type",
 			"param_name": "input_type",
-			"description": "Auto uses a table or pseudobulk bundle when one is discoverable; otherwise it accepts exactly one .rds as a MOO. MOO is valid only with raw_counts.",
+			"description": "Choose table for an explicit or automatically discovered matrix-and-metadata pair or pseudobulk bundle. Choose moo for one compatible raw-count MOO object.",
 			"type": "list",
 			"value_type": "string",
-			"default_value": "auto",
+			"default_value": "table",
 			"extra_data": [
-				"auto",
 				"table",
 				"moo"
 			]
@@ -65,42 +100,6 @@
 				"sct_mean_expression"
 			],
 			"required": true
-		},
-		{
-			"id": "counts_file_upload",
-			"category": "input",
-			"name": "Matrix File (Optional)",
-			"param_name": "counts_file",
-			"description": "Select a CSV, TSV, TXT, or RDS matrix. Leave blank to discover the mode-specific matrix from one attached pseudobulk bundle or unambiguous table asset.",
-			"type": "file",
-			"value_type": "string"
-		},
-		{
-			"id": "metadata_file_upload",
-			"category": "input",
-			"name": "Sample Metadata File",
-			"param_name": "metadata_file",
-			"description": "Select a CSV, TSV, TXT, or RDS sample-metadata table. Leave blank to discover Pseudobulk_Sample_Metadata.csv beside one manifest or another unambiguous metadata table.",
-			"type": "file",
-			"value_type": "string"
-		},
-		{
-			"id": "moo_file_upload",
-			"category": "input",
-			"name": "MOO File (Optional; Raw Counts Only)",
-			"param_name": "moo_file",
-			"description": "One compatible multiOmicDataSet .rds. Use only with Analysis Mode = raw_counts. The adapter extracts its raw count layer and embedded sample metadata.",
-			"type": "file",
-			"value_type": "string"
-		},
-		{
-			"id": "pseudobulk_manifest_upload",
-			"category": "advanced",
-			"name": "Pseudobulk Manifest (Optional)",
-			"param_name": "pseudobulk_manifest",
-			"description": "Advanced override for Pseudobulk_Manifest.dcf. Leave blank to discover exactly one attached manifest. The adapter validates matrix_type against Analysis Mode and discovers its paired matrix and metadata in the same folder.",
-			"type": "file",
-			"value_type": "string"
 		},
 		{
 			"id": "gene_names_column",
@@ -199,6 +198,28 @@
 			]
 		},
 		{
+			"id": "normalization_method",
+			"category": "advanced",
+			"name": "Normalization Method",
+			"param_name": "normalization_method",
+			"description": "Auto uses TMM for raw_counts and None for Harmony/SCT donor means. Other profiles are raw-count sensitivity options and should be chosen only after reviewing diagnostics.",
+			"type": "list",
+			"value_type": "string",
+			"default_value": "auto",
+			"extra_data": [
+				"auto",
+				"None",
+				"TMM",
+				"Quantile",
+				"TMM + Quantile",
+				"TMM + Scale",
+				"TMM + Cyclic Loess",
+				"TMMwsp",
+				"RLE",
+				"Upper Quartile"
+			]
+		},
+		{
 			"id": "return_batch_corrected_values",
 			"category": "processing",
 			"name": "Append Adjusted Expression Columns",
@@ -229,43 +250,6 @@
 			]
 		},
 		{
-			"id": "write_normalization_diagnostics",
-			"category": "processing",
-			"name": "Write Normalization Diagnostics",
-			"param_name": "write_normalization_diagnostics",
-			"description": "Auto writes log-CPM and voom diagnostics for raw_counts only. Continuous-expression modes do not have count-normalization diagnostics.",
-			"type": "list",
-			"value_type": "string",
-			"default_value": "auto",
-			"extra_data": [
-				"auto",
-				"true",
-				"false"
-			]
-		},
-		{
-			"id": "normalization_method",
-			"category": "advanced",
-			"name": "Normalization Method",
-			"param_name": "normalization_method",
-			"description": "Auto uses TMM for raw_counts and None for Harmony/SCT donor means. Other profiles are raw-count sensitivity options and should be chosen only after reviewing diagnostics.",
-			"type": "list",
-			"value_type": "string",
-			"default_value": "auto",
-			"extra_data": [
-				"auto",
-				"None",
-				"TMM",
-				"Quantile",
-				"TMM + Quantile",
-				"TMM + Scale",
-				"TMM + Cyclic Loess",
-				"TMMwsp",
-				"RLE",
-				"Upper Quartile"
-			]
-		},
-		{
 			"id": "summarization_method",
 			"category": "advanced",
 			"name": "Duplicate Feature-ID Handling",
@@ -279,6 +263,21 @@
 				"sum",
 				"mean",
 				"max"
+			]
+		},
+		{
+			"id": "write_normalization_diagnostics",
+			"category": "processing",
+			"name": "Write Normalization Diagnostics",
+			"param_name": "write_normalization_diagnostics",
+			"description": "Auto writes log-CPM and voom diagnostics for raw_counts only. Continuous-expression modes do not have count-normalization diagnostics.",
+			"type": "list",
+			"value_type": "string",
+			"default_value": "auto",
+			"extra_data": [
+				"auto",
+				"true",
+				"false"
 			]
 		}
 	],
