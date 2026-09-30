@@ -14,9 +14,11 @@
   move adapter discovery and legacy validation code outside that managed tree.
 - Add interface, input-discovery, three-mode execution, source-provenance, and
   legacy-equivalence tests.
+- Record the canonical public `r-statistics` tag and immutable GHCR digest
+  separately from the still-pending Code Ocean environment identity and run.
 
 Code Ocean validation, the next adapter version and tag, the platform release
-identifier, and the immutable runtime digest remain pending.
+identifier, and the selected Code Ocean environment digest remain pending.
 
 ## 0.1.3
 
