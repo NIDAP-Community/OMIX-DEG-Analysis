@@ -3,8 +3,11 @@
 ## Unreleased
 
 - Synchronize the managed scientific export with canonical OMIX DEG Analysis
-  `0.4.0`, interface version `2`, at commit
-  `018ef0e10bf29c69166b38ee6d81d4d71d18aeca`.
+  `0.4.1`, interface version `2`, at commit
+  `b25430f52171c9c1e5fea1b093b70452e71f792a`.
+- Resolve automatic raw-count batch selection after metadata is loaded: use
+  `Batch` only when that column exists, otherwise run without a batch term;
+  keep explicitly requested missing columns as errors.
 - Add Code Ocean translation and discovery for raw-count, Harmony-mean, and
   SCTransform-mean pseudobulk bundles.
 - Align the adapter CLI and App Panel with canonical input names, types,

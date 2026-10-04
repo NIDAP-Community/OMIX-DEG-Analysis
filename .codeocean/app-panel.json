@@ -168,7 +168,7 @@
 			"category": "design",
 			"name": "Technical Batch Column(s) (Optional)",
 			"param_name": "batch_effect_columns",
-			"description": "Auto uses Batch for raw_counts and no batch term for continuous-expression modes. Harmony means forbid a second batch correction. For SCT means, use Additional Fixed Covariates for an unhandled batch.",
+			"description": "For raw_counts, Auto uses Batch only when that metadata column exists and otherwise uses no batch term. Harmony means forbid a second batch correction. For SCT means, use Additional Fixed Covariates for an unhandled batch.",
 			"type": "text",
 			"value_type": "string",
 			"default_value": "auto"
