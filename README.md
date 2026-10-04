@@ -149,10 +149,11 @@ expression in B than in A.
 
 - **Additional Fixed Covariates**: metadata columns to include in the model,
   such as sex or a prespecified clinical variable.
-- **Technical Batch Column(s)**: use `Auto` to model `Batch` for raw counts and
-  omit this term for continuous-expression modes. Harmony input forbids a
-  second batch correction. For SCT means, put an unhandled technical batch in
-  **Additional Fixed Covariates** instead.
+- **Technical Batch Column(s)**: for raw counts, `Auto` models `Batch` only
+  when that metadata column exists; otherwise it uses no batch term. An
+  explicitly named missing batch column remains an error. Harmony input
+  forbids a second batch correction. For SCT means, put an unhandled technical
+  batch in **Additional Fixed Covariates** instead.
 - **Donor / Patient Column**: biological subject identifier for paired or
   repeated-measures samples. This is not a substitute for a technical batch.
 
@@ -219,7 +220,7 @@ visualization step.
 | Multiple manifests found | Attach one pseudobulk result or select **Pseudobulk Manifest** explicitly. |
 | Multiple matrix or metadata candidates found | Attach one combined Data Asset with exactly one pair, remove unrelated tables, or select both files explicitly. |
 | `GeneName` or `Sample` is missing | Set the corresponding parameter to the exact column name in your files. |
-| `Batch` is missing | For raw counts, clear or replace the Auto batch setting. Continuous modes resolve Auto to no Technical Batch term. |
+| An explicitly selected batch column is missing | Add the named metadata column or clear the explicit value. In raw-count mode, Auto uses `Batch` only when that column exists and otherwise runs without a batch term. |
 | A count-only option is rejected | Restore that option to Auto; Harmony/SCT modes do not use TMM, voom, edgeR filtering, or downstream batch removal. |
 | Samples do not match | Count-table column names and metadata sample IDs must match exactly. |
 | A group has fewer than two samples | Add biological replicates or revise the requested contrast. |

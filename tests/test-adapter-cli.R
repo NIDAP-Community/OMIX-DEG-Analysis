@@ -77,5 +77,62 @@ for (mode in names(mode_specs)) {
   stopifnot(if (identical(mode, "raw_counts")) all(file.exists(diagnostics)) else !any(file.exists(diagnostics)))
 }
 
+# Auto batch selection must permit raw-count metadata without a Batch column,
+# while an explicitly requested missing batch column remains a strict error.
+auto_batch_bundle <- file.path(root, "raw-counts-without-batch")
+dir.create(auto_batch_bundle)
+raw_matrix <- data.frame(
+  GeneName = paste0("Gene", seq_len(nrow(counts))),
+  counts,
+  check.names = FALSE
+)
+metadata_without_batch <- metadata[, c("Sample", "Group"), drop = FALSE]
+counts_path <- file.path(auto_batch_bundle, "counts.csv")
+metadata_path <- file.path(auto_batch_bundle, "metadata.csv")
+utils::write.csv(raw_matrix, counts_path, row.names = FALSE)
+utils::write.csv(metadata_without_batch, metadata_path, row.names = FALSE)
+
+run_raw_without_batch <- function(output, batch_effect_columns = "auto") {
+  suppressWarnings(system2(
+    command = file.path(R.home("bin"), "Rscript"),
+    args = c(
+      file.path("code", "main.R"),
+      "--input_type", "table",
+      "--analysis_mode", "raw_counts",
+      "--counts", counts_path,
+      "--metadata", metadata_path,
+      "--batch_effect_columns", batch_effect_columns,
+      "--write_normalization_diagnostics", "false",
+      "--output_dir", output
+    ),
+    stdout = TRUE,
+    stderr = TRUE
+  ))
+}
+
+auto_output <- file.path(root, "raw-counts-without-batch-results")
+auto_log <- run_raw_without_batch(auto_output)
+auto_status <- attr(auto_log, "status")
+stopifnot(
+  is.null(auto_status) || identical(auto_status, 0L),
+  all(file.exists(file.path(auto_output, c(
+    "DEG_Analysis.csv",
+    "Sample_Metadata.csv",
+    "run_summary.txt"
+  ))))
+)
+
+explicit_output <- file.path(root, "explicit-missing-batch-results")
+explicit_log <- run_raw_without_batch(explicit_output, "Batch")
+explicit_status <- attr(explicit_log, "status")
+stopifnot(
+  !is.null(explicit_status) && explicit_status != 0L,
+  grepl(
+    "Metadata_Table is missing required column(s): Batch",
+    paste(explicit_log, collapse = "\n"),
+    fixed = TRUE
+  )
+)
+
 unlink(root, recursive = TRUE)
-message("OMIX DEG adapter CLI passed raw-count, Harmony-mean, and SCT-mean bundle tests")
+message("OMIX DEG adapter CLI passed three-mode bundle and automatic batch-selection tests")

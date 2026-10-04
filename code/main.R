@@ -57,7 +57,7 @@ option_list <- list(
   make_option("--contrast_variable_columns", type = "character", default = "Group", help = "One or two comma-separated biological group columns [default: %default]"),
   make_option("--contrasts", type = "character", default = "B-A", help = "Comma-separated numerator-denominator contrasts [default: %default]"),
   make_option("--covariate_columns", type = "character", default = "", help = "Optional comma-separated fixed covariates"),
-  make_option("--batch_effect_columns", type = "character", default = "auto", help = "auto, blank, or comma-separated technical batch columns [default: %default]"),
+  make_option("--batch_effect_columns", type = "character", default = "auto", help = "auto uses Batch for raw_counts only when metadata contains it; otherwise supply blank or comma-separated technical batch columns [default: %default]"),
   make_option("--donor_variable_column", type = "character", default = "", help = "Optional donor/patient column for repeated measures"),
   make_option("--filter_low_expression", type = "character", default = "auto", help = "auto, true, or false [default: %default]"),
   make_option("--return_batch_corrected_values", type = "character", default = "auto", help = "auto, true, or false [default: %default]"),
@@ -152,7 +152,7 @@ if (!nzchar(output_dir)) {
 dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
 
 batch_effect_columns <- if (identical(tolower(trimws(opt$batch_effect_columns)), "auto")) {
-  if (identical(analysis_mode, "raw_counts")) "Batch" else character()
+  .omix_deg_auto_batch_effect_columns(metadata, analysis_mode)
 } else {
   split_csv(opt$batch_effect_columns)
 }

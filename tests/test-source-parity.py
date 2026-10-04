@@ -8,8 +8,8 @@ from pathlib import Path
 
 
 source_record = Path("OMIX_MODULE_SOURCE.md").read_text()
-expected_commit = "018ef0e10bf29c69166b38ee6d81d4d71d18aeca"
-expected_hash = "e0e64e4de04b91419c77d1d44ac607f62fa172bc1b99fd0936ebb3e6ae8eb13e"
+expected_commit = "b25430f52171c9c1e5fea1b093b70452e71f792a"
+expected_hash = "ba37ef85187a13bda33d1ed16f3f7d76b44d6a481760ca89317b6a65487e5624"
 managed_path = Path("code/functions/OMIX_DEG_Analysis.R")
 
 commit_match = re.search(

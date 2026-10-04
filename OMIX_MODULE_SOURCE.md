@@ -4,10 +4,10 @@
 
 - **Module:** [OMIX DEG Analysis](https://github.com/NIDAP-Community/OMIX/tree/main/modules/OMIX-DEG-Analysis)
 - **Canonical path:** `modules/OMIX-DEG-Analysis/`
-- **Canonical module version:** `0.4.0`
+- **Canonical module version:** `0.4.1`
 - **Canonical interface version:** `2`
-- **Canonical release tag:** **Pending**; canonical `0.4.0` has not yet been tagged.
-- **Canonical source reference:** [`018ef0e10bf29c69166b38ee6d81d4d71d18aeca`](https://github.com/NIDAP-Community/OMIX/commit/018ef0e10bf29c69166b38ee6d81d4d71d18aeca)
+- **Canonical release tag:** **Pending**; canonical `0.4.1` has not yet been tagged.
+- **Canonical source reference:** [`b25430f52171c9c1e5fea1b093b70452e71f792a`](https://github.com/NIDAP-Community/OMIX/commit/b25430f52171c9c1e5fea1b093b70452e71f792a)
 - **Interface schema:** [schemas/interface.yml](https://github.com/NIDAP-Community/OMIX/blob/main/modules/OMIX-DEG-Analysis/schemas/interface.yml)
 - **Module contract:** [OMIX module contract](https://github.com/NIDAP-Community/OMIX/blob/main/docs/module-contract.md)
 
@@ -15,7 +15,7 @@
 
 | Canonical file | Adapter copy | Canonical SHA-256 | Adapter SHA-256 | Purpose |
 | --- | --- | --- | --- | --- |
-| `R/OMIX_DEG_Analysis.R` | `code/functions/OMIX_DEG_Analysis.R` | `e0e64e4de04b91419c77d1d44ac607f62fa172bc1b99fd0936ebb3e6ae8eb13e` | `e0e64e4de04b91419c77d1d44ac607f62fa172bc1b99fd0936ebb3e6ae8eb13e` | Raw-count edgeR/limma-voom plus Harmony-mean and SCT-mean direct-limma implementation. |
+| `R/OMIX_DEG_Analysis.R` | `code/functions/OMIX_DEG_Analysis.R` | `ba37ef85187a13bda33d1ed16f3f7d76b44d6a481760ca89317b6a65487e5624` | `ba37ef85187a13bda33d1ed16f3f7d76b44d6a481760ca89317b6a65487e5624` | Raw-count edgeR/limma-voom plus Harmony-mean and SCT-mean direct-limma implementation. |
 
 This is the complete canonical `R/` tree at the source reference above. The
 listed export was verified byte-for-byte; no adapter-side scientific edits are
@@ -31,10 +31,11 @@ present under `code/functions/`.
   `code/adapter/DEG_Adapter.R`. They resolve platform paths before calling the
   canonical scientific function and are not part of the managed scientific
   export.
-- Mode-aware `auto` values are passed through the canonical interface: the
-  effective raw-count defaults remain filtering + TMM + diagnostics + summed
-  duplicate IDs, while continuous-expression modes disable count processing
-  and average duplicate IDs.
+- Mode-aware `auto` values are resolved with the canonical implementation
+  after inputs are loaded. In raw-count mode, automatic batch selection uses
+  `Batch` only when that metadata column exists; other raw-count defaults
+  remain filtering + TMM + diagnostics + summed duplicate IDs. Continuous-
+  expression modes disable count processing and average duplicate IDs.
 - The canonical internal `output_dir` control is translated by `code/main.R`
   to `/results` when that Code Ocean mount exists; it is not exposed as an App
   Panel scientific control.

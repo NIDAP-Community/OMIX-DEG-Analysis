@@ -78,6 +78,7 @@ assert by_name["analysis_mode"]["extra_data"] == [
 assert by_name["input_type"]["extra_data"] == ["table", "moo"]
 assert by_name["normalization_method"]["extra_data"][:2] == ["auto", "None"]
 assert by_name["pseudobulk_manifest"]["category"] == "advanced"
+assert "only when that metadata column exists" in by_name["batch_effect_columns"]["description"]
 
 file_controls = {"counts", "metadata", "pseudobulk_manifest", "moo"}
 assert all(by_name[name]["type"] == "file" for name in file_controls)
