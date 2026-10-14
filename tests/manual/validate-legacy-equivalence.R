@@ -14,6 +14,14 @@ source(file.path("code", "functions", "OMIX_DEG_Analysis.R"))
 source(file.path(template_library, "templates", "DEG_Analysis_v193.R"))
 source(file.path(template_library, "templates", "DEG_Paired_v53.R"))
 
+# The legacy templates called unqualified voom() and therefore inherited its
+# then-current fixed 0.5 default. Make that historical reference behavior
+# explicit so this comparison does not silently switch to adaptive smoothing
+# when it runs with a newer limma release.
+voom <- function(...) {
+  limma::voom(..., span = 0.5, adaptive.span = FALSE)
+}
+
 make_fixture <- function() {
   set.seed(42)
   sample_ids <- c("A1", "A2", "A3", "B1", "B2", "B3")

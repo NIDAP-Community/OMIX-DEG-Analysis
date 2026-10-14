@@ -67,7 +67,15 @@ for (mode in names(mode_specs)) {
   stopifnot(
     any(summary == paste("analysis mode:", mode)),
     any(summary == paste("input matrix type:", spec$matrix_type)),
-    any(grepl("Pseudobulk_Manifest.dcf", summary, fixed = TRUE))
+    any(grepl("Pseudobulk_Manifest.dcf", summary, fixed = TRUE)),
+    any(summary == paste(
+      "voom trend span:",
+      if (identical(mode, "raw_counts")) "0.5" else "not applicable"
+    )),
+    any(summary == paste(
+      "voom adaptive span:",
+      if (identical(mode, "raw_counts")) "false" else "not applicable"
+    ))
   )
   diagnostics <- file.path(output, c(
     "normalization_boxplots.png",
