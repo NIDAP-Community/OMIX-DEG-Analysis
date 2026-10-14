@@ -188,6 +188,11 @@ The diagnostics are part of the decision: inspect the normalization plots and
 the voom mean-variance trend rather than choosing an alternative method solely
 because it is available.
 
+Every raw-count voom pass uses the fixed smoothing policy `span = 0.5` and
+`adaptive.span = FALSE`. These are reproducibility constants, not App Panel
+parameters; they preserve the published-runtime behavior across supported
+limma releases.
+
 ## Results
 
 The analysis writes the following primary results.
@@ -197,7 +202,8 @@ The analysis writes the following primary results.
 - `Sample_Metadata.csv`: metadata for exactly the samples whose expression is
   included in `DEG_Analysis.csv`, in matching order.
 - `run_summary.txt`: resolved input paths, manifest use, analysis mode, matrix
-  type, model, normalization, and output provenance.
+  type, model, normalization, fixed raw-count voom span/adaptive-span status,
+  and output provenance.
 - Raw-count diagnostics: `normalization_boxplots.png`,
   `normalization_densities.png`, and `voom_mean_variance.png`. They are written
   by default and can be disabled. They are not produced for Harmony/SCT modes.
@@ -228,7 +234,8 @@ visualization step.
 ## Methods
 
 In `raw_counts`, OMIX uses design-aware filtering and edgeR's TMM normalization
-before limma-voom modelling with empirical-Bayes moderation. In the two
+before limma-voom modelling with empirical-Bayes moderation. Voom trend
+smoothing is fixed at span `0.5` with adaptive span disabled. In the two
 continuous-expression modes it fits limma directly to declared donor means and
 does not repeat count normalization. Repeated measures use the donor-aware
 `duplicateCorrelation` path.

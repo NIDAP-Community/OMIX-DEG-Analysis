@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Synchronize the byte-identical managed scientific export with canonical OMIX
+  DEG Analysis `0.4.2`, interface version `2`, at commit
+  `11bda7fb2cbfd94c0641f864d1c3a49a678f5af1`.
+- Preserve the canonical fixed raw-count voom smoothing policy (`span = 0.5`,
+  `adaptive.span = FALSE`) and record both settings in the adapter-generated
+  run summary. No App Panel control or scientific default was added.
 - Synchronize the managed scientific export with canonical OMIX DEG Analysis
   `0.4.1`, interface version `2`, at commit
   `b25430f52171c9c1e5fea1b093b70452e71f792a`.

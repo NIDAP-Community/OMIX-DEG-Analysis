@@ -219,6 +219,18 @@ writeLines(c(
   paste("library-size normalization:", run_summary$library_size_normalization),
   paste("voom-scale normalization:", run_summary$voom_scale_normalization),
   paste(
+    "voom trend span:",
+    if (identical(run_summary$analysis_mode, "raw_counts")) run_summary$voom_trend_span else "not applicable"
+  ),
+  paste(
+    "voom adaptive span:",
+    if (identical(run_summary$analysis_mode, "raw_counts")) {
+      tolower(as.character(run_summary$voom_adaptive_span))
+    } else {
+      "not applicable"
+    }
+  ),
+  paste(
     "normalization diagnostics:",
     if (length(run_summary$normalization_diagnostic_files) == 0L) {
       "not written"
