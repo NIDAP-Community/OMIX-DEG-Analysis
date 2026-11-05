@@ -24,7 +24,7 @@ groups using one of three explicit matrix contracts:
 
 | Analysis mode | Valid matrix | Model |
 | --- | --- | --- |
-| `raw_counts` | Raw or pre-filtered integer-like bulk/summed-pseudobulk counts | Design-aware filtering, edgeR normalization, and limma-voom |
+| `raw_counts` | Raw or pre-filtered count-scale bulk/summed-pseudobulk values, including integer counts or fractional RSEM `expected_count` estimates | Design-aware filtering, edgeR normalization, and limma-voom |
 | `harmony_mean_expression` | Declared log2-scale Harmony-corrected cell-type × donor means | Direct limma; no TMM, voom, or second batch correction |
 | `sct_mean_expression` | Log2-scale SCT donor means written from Seurat `SCT/data` | Direct limma; no TMM or voom |
 
@@ -115,9 +115,11 @@ Matrix and metadata tables may be CSV, TSV, TXT, or tabular RDS files.
 
 - The first column contains feature identifiers; the default name is
   `GeneName`.
-- Each remaining column represents one donor/sample. Values must be
-  integer-like counts for `raw_counts`, declared log2 Harmony-corrected means
-  for `harmony_mean_expression`, or log2 SCT donor means for
+- Each remaining column represents one donor/sample. For `raw_counts`, values
+  must be finite, non-negative count-scale data: observed integer counts or
+  fractional RSEM `expected_count` estimates. TPM, FPKM, CPM, log-transformed,
+  and other normalized-expression values are not valid raw-count input. Use
+  declared log2 Harmony-corrected means for `harmony_mean_expression`, or log2 SCT donor means for
   `sct_mean_expression`.
 - Column names must match the sample IDs in the metadata table.
 

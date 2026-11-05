@@ -8,8 +8,8 @@ from pathlib import Path
 
 
 source_record = Path("OMIX_MODULE_SOURCE.md").read_text()
-expected_commit = "11bda7fb2cbfd94c0641f864d1c3a49a678f5af1"
-expected_hash = "44cfe51ea649ed72aa5c7c55ddfa6aed907517cad408c52a34a96ca2c692a7f2"
+expected_commit = "e95a2bb737fa527294aa515a8978702fcdb7b295"
+expected_hash = "d4d9030bc780e9e444276a2770b9abf2b3615714d9032d272139b3abff52633a"
 managed_path = Path("code/functions/OMIX_DEG_Analysis.R")
 
 commit_match = re.search(
@@ -17,7 +17,7 @@ commit_match = re.search(
 )
 assert commit_match, "Canonical source reference is missing"
 assert commit_match.group(1) == expected_commit
-assert "**Canonical module version:** `0.4.2`" in source_record
+assert "**Canonical module version:** `0.4.4`" in source_record
 assert "**Canonical interface version:** `2`" in source_record
 
 managed_files = sorted(

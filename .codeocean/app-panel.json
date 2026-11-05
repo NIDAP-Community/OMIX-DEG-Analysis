@@ -3,13 +3,13 @@
 	"named_parameters": true,
 	"general": {
 		"title": "OMIX DEG Analysis",
-		"instructions": "Choose the analysis mode that matches the matrix: raw integer counts, Harmony-corrected donor means, or SCTransform donor means. Raw counts use edgeR/limma-voom. The two declared continuous-expression modes use direct limma without count normalization or voom. Do not interchange these inputs.\n\nFor a combined pseudobulk result, attach the folder containing its matrix, Pseudobulk_Sample_Metadata.csv, and Pseudobulk_Manifest.dcf; leave the file selectors blank. The adapter discovers the bundle and validates its matrix type against Analysis Mode. Advanced users can select the manifest explicitly. Ordinary tables and raw-count MOO input remain supported.\n\nThe default column names are GeneName, Sample, Group, and Batch. For paired or repeated measurements, set Donor / Patient Column. Do not use technical batch as a donor. Mode-aware Auto settings preserve the raw-count defaults and disable count-only processing for continuous-expression modes."
+		"instructions": "Choose the analysis mode that matches the matrix: raw count-scale data (including integer counts or fractional RSEM expected_count estimates), Harmony-corrected donor means, or SCTransform donor means. Raw counts use edgeR/limma-voom. The two declared continuous-expression modes use direct limma without count normalization or voom. Do not interchange these inputs.\n\nFor a combined pseudobulk result, attach the folder containing its matrix, Pseudobulk_Sample_Metadata.csv, and Pseudobulk_Manifest.dcf; leave the file selectors blank. The adapter discovers the bundle and validates its matrix type against Analysis Mode. Advanced users can select the manifest explicitly. Ordinary tables and raw-count MOO input remain supported.\n\nThe default column names are GeneName, Sample, Group, and Batch. For paired or repeated measurements, set Donor / Patient Column. Do not use technical batch as a donor. Mode-aware Auto settings preserve the raw-count defaults and disable count-only processing for continuous-expression modes."
 	},
 	"datasets": [
 		{
 			"id": "6478f7be-ec52-4eb8-b360-6d1766bebea1",
 			"name": "DEG input data (matrix + metadata)",
-			"description": "Attach one raw-count table and metadata pair, one complete pseudobulk result bundle, or one compatible MOO. A pseudobulk bundle contains Pseudobulk_Manifest.dcf, Pseudobulk_Sample_Metadata.csv, and exactly one mode-specific matrix. Leave file selectors blank for automatic bundle discovery. Raw-count tables must be integer-like; Harmony and SCT donor means must use their matching Analysis Mode."
+			"description": "Attach one raw count-scale table and metadata pair, one complete pseudobulk result bundle, or one compatible MOO. A pseudobulk bundle contains Pseudobulk_Manifest.dcf, Pseudobulk_Sample_Metadata.csv, and exactly one mode-specific matrix. Leave file selectors blank for automatic bundle discovery. Raw-count tables may contain integer counts or fractional RSEM expected_count estimates; Harmony and SCT donor means must use their matching Analysis Mode."
 		}
 	],
 	"categories": [
