@@ -4,18 +4,18 @@
 
 - **Module:** [OMIX DEG Analysis](https://github.com/NIDAP-Community/OMIX/tree/main/modules/OMIX-DEG-Analysis)
 - **Canonical path:** `modules/OMIX-DEG-Analysis/`
-- **Canonical module version:** `0.4.2`
+- **Canonical module version:** `0.4.4`
 - **Canonical interface version:** `2`
-- **Canonical release tag:** **Pending**; canonical `0.4.2` has not yet been tagged.
-- **Canonical source reference:** [`11bda7fb2cbfd94c0641f864d1c3a49a678f5af1`](https://github.com/NIDAP-Community/OMIX/commit/11bda7fb2cbfd94c0641f864d1c3a49a678f5af1)
-- **Interface schema:** [schemas/interface.yml](https://github.com/NIDAP-Community/OMIX/blob/11bda7fb2cbfd94c0641f864d1c3a49a678f5af1/modules/OMIX-DEG-Analysis/schemas/interface.yml)
+- **Canonical release tag:** **Pending**; canonical `0.4.4` has not yet been tagged.
+- **Canonical source reference:** [`e95a2bb737fa527294aa515a8978702fcdb7b295`](https://github.com/NIDAP-Community/OMIX/commit/e95a2bb737fa527294aa515a8978702fcdb7b295)
+- **Interface schema:** [schemas/interface.yml](https://github.com/NIDAP-Community/OMIX/blob/e95a2bb737fa527294aa515a8978702fcdb7b295/modules/OMIX-DEG-Analysis/schemas/interface.yml)
 - **Module contract:** [OMIX module contract](https://github.com/NIDAP-Community/OMIX/blob/main/docs/module-contract.md)
 
 ## Exported scientific files
 
 | Canonical file | Adapter copy | Canonical SHA-256 | Adapter SHA-256 | Purpose |
 | --- | --- | --- | --- | --- |
-| `R/OMIX_DEG_Analysis.R` | `code/functions/OMIX_DEG_Analysis.R` | `44cfe51ea649ed72aa5c7c55ddfa6aed907517cad408c52a34a96ca2c692a7f2` | `44cfe51ea649ed72aa5c7c55ddfa6aed907517cad408c52a34a96ca2c692a7f2` | Raw-count edgeR/limma-voom with fixed trend smoothing plus Harmony-mean and SCT-mean direct-limma implementation. |
+| `R/OMIX_DEG_Analysis.R` | `code/functions/OMIX_DEG_Analysis.R` | `d4d9030bc780e9e444276a2770b9abf2b3615714d9032d272139b3abff52633a` | `d4d9030bc780e9e444276a2770b9abf2b3615714d9032d272139b3abff52633a` | Raw-count edgeR/limma-voom accepting integer counts and fractional RSEM expected_count estimates, plus Harmony-mean and SCT-mean direct-limma implementation. |
 
 This is the complete canonical `R/` tree at the source reference above. The
 listed export was verified byte-for-byte; no adapter-side scientific edits are
@@ -36,6 +36,9 @@ present under `code/functions/`.
   `Batch` only when that metadata column exists; other raw-count defaults
   remain filtering + TMM + diagnostics + summed duplicate IDs. Continuous-
   expression modes disable count processing and average duplicate IDs.
+- Fractional finite non-negative RSEM `expected_count` estimates pass through
+  the raw-count path unchanged; TPM, FPKM, CPM, log-transformed, and other
+  normalized-expression matrices remain invalid for that path.
 - The canonical internal `output_dir` control is translated by `code/main.R`
   to `/results` when that Code Ocean mount exists; it is not exposed as an App
   Panel scientific control.
@@ -53,13 +56,13 @@ present under `code/functions/`.
 | --- | --- |
 | Adapter version | Current released version: `0.1.3`; next version **Pending** an explicit release decision and platform validation. |
 | Adapter release tag | Current release: [`v0.1.3`](https://github.com/NIDAP-Community/OMIX-DEG-Analysis/tree/v0.1.3); interface-2 adapter tag **Pending**. |
-| Platform release | Canonical-0.4.2/interface-2 Code Ocean validation **Pending**. Historical v0.1.3 validation succeeded on 2026-09-04; a published release ID was not recorded. |
+| Platform release | Canonical-0.4.4/interface-2 Code Ocean validation with an RSEM expected_count fixture **Pending**. Historical v0.1.3 validation succeeded on 2026-09-04; a published release ID was not recorded. |
 | Canonical runtime profile | `r-statistics`, as declared by the canonical module. |
 | Published OMIX runtime | Tag `ghcr.io/nidap-community/omix-r-statistics:r4.4.3-bioconductor3.20-v1`; immutable public identity `ghcr.io/nidap-community/omix-r-statistics@sha256:1325722877fec5167d171aa766ddf7bbfd056e4999bf40fd8c1eabee495da667`. |
 | Adapter-selected base image | `codeocean/omix-r-statistics:r4.4.3-bioconductor3.20-v1` from `.codeocean/environment.json`; the readable profile and tag align with the published OMIX runtime, but the Code Ocean environment's own digest is **Pending Code Ocean resolution** and is not inferred from GHCR. |
 | Runtime build evidence | [Starter Environments run 32928780557](https://github.com/NIDAP-Community/OMIX/actions/runs/32928780557) built, verified, inventoried, and published the public `r-statistics` image; [GHCR version 1172700304](https://github.com/orgs/NIDAP-Community/packages/container/omix-r-statistics/1172700304) independently maps the version tag to the recorded digest. |
 | Code Ocean environment identity | **Pending** — no immutable environment-release identifier is recorded. |
-| Capsule run | Canonical-0.4.2/interface-2 named-parameter Code Ocean run **Pending**; GitHub or local checks are not platform validation. |
+| Capsule run | Canonical-0.4.4/interface-2 named-parameter Code Ocean run with an RSEM expected_count fixture **Pending**; GitHub or local checks are not platform validation. |
 | Syncweaver mapping | `.syncweaver-lock.json` **Pending** under [OMIX issue #44](https://github.com/NIDAP-Community/OMIX/issues/44). This pull request records the interim Harbor mapping and hashes. |
 
 The public image identity above is also recorded in the canonical

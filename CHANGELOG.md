@@ -3,6 +3,14 @@
 ## Unreleased
 
 - Synchronize the byte-identical managed scientific export with canonical OMIX
+  DEG Analysis `0.4.4`, interface version `2`, at commit
+  `e95a2bb737fa527294aa515a8978702fcdb7b295`. The raw-count path now accepts
+  finite, non-negative fractional RSEM `expected_count` estimates without
+  rounding, while retaining rejection of normalized-expression matrices.
+- Add adapter CLI coverage for an explicit fractional RSEM expected_count
+  table. This remains an adapter synchronization; Code Ocean validation is
+  pending and no release is claimed.
+- Synchronize the byte-identical managed scientific export with canonical OMIX
   DEG Analysis `0.4.2`, interface version `2`, at commit
   `11bda7fb2cbfd94c0641f864d1c3a49a678f5af1`.
 - Preserve the canonical fixed raw-count voom smoothing policy (`span = 0.5`,

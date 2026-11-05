@@ -85,6 +85,43 @@ for (mode in names(mode_specs)) {
   stopifnot(if (identical(mode, "raw_counts")) all(file.exists(diagnostics)) else !any(file.exists(diagnostics)))
 }
 
+# RSEM expected_count values are finite, non-negative fractional count-scale
+# estimates. The Code Ocean entry point must pass them to the managed
+# raw-count implementation without rounding or rejecting the upload.
+rsem_counts <- counts + 0.25
+rsem_matrix_path <- file.path(root, "rsem-expected-counts.csv")
+rsem_metadata_path <- file.path(root, "rsem-expected-counts-metadata.csv")
+rsem_output <- file.path(root, "rsem-expected-counts-results")
+utils::write.csv(
+  data.frame(GeneName = paste0("Gene", seq_len(nrow(rsem_counts))), rsem_counts, check.names = FALSE),
+  rsem_matrix_path,
+  row.names = FALSE
+)
+utils::write.csv(metadata, rsem_metadata_path, row.names = FALSE)
+rsem_log <- suppressWarnings(system2(
+  command = file.path(R.home("bin"), "Rscript"),
+  args = c(
+    file.path("code", "main.R"),
+    "--input_type", "table",
+    "--analysis_mode", "raw_counts",
+    "--counts", rsem_matrix_path,
+    "--metadata", rsem_metadata_path,
+    "--write_normalization_diagnostics", "false",
+    "--output_dir", rsem_output
+  ),
+  stdout = TRUE,
+  stderr = TRUE
+))
+rsem_status <- attr(rsem_log, "status")
+stopifnot(
+  is.null(rsem_status) || identical(rsem_status, 0L),
+  all(file.exists(file.path(rsem_output, c(
+    "DEG_Analysis.csv",
+    "Sample_Metadata.csv",
+    "run_summary.txt"
+  ))))
+)
+
 # Auto batch selection must permit raw-count metadata without a Batch column,
 # while an explicitly requested missing batch column remains a strict error.
 auto_batch_bundle <- file.path(root, "raw-counts-without-batch")
@@ -143,4 +180,4 @@ stopifnot(
 )
 
 unlink(root, recursive = TRUE)
-message("OMIX DEG adapter CLI passed three-mode bundle and automatic batch-selection tests")
+message("OMIX DEG adapter CLI passed three-mode bundle, fractional RSEM, and automatic batch-selection tests")

@@ -7,6 +7,8 @@ from pathlib import Path
 panel = json.loads(Path(".codeocean/app-panel.json").read_text())
 assert panel["named_parameters"] is True
 assert "help_text" not in Path(".codeocean/app-panel.json").read_text()
+assert "fractional RSEM expected_count estimates" in panel["general"]["instructions"]
+assert "fractional RSEM expected_count estimates" in panel["datasets"][0]["description"]
 
 parameters = panel["parameters"]
 names = [parameter.get("param_name") for parameter in parameters]
